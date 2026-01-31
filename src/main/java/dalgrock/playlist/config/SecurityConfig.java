@@ -1,5 +1,8 @@
 package dalgrock.playlist.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dalgrock.playlist.core.jwt.JwtAuthenticationFilter;
 import dalgrock.playlist.core.jwt.JwtTokenProvider;
 import dalgrock.playlist.service.CustomOAuth2UserService;
@@ -24,6 +27,13 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final OAuth2FailureHandler oAuth2FailureHandler;
     private final JwtTokenProvider tokenProvider;
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
