@@ -3,7 +3,6 @@ package dalgrock.playlist.config;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -14,22 +13,19 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI openAPI() {
-        String securitySchemeName = "bearerAuth";
+        String cookieAuthName = "cookieAuth";
 
         return new OpenAPI()
                 .info(new Info()
                         .title("Pliview API")
                         .description("Pliview API 문서")
                         .version("1.0.0"))
-                // Bearer Token
-                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
-                        .addSecuritySchemes(securitySchemeName,
+                        .addSecuritySchemes(cookieAuthName,
                                 new SecurityScheme()
-                                        .name(securitySchemeName)
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")));
+                                        .name("access_token")
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.COOKIE)));
     }
 
     @Bean
