@@ -8,7 +8,5 @@ public interface UserRepository {
 
     Optional<User> findByProviderAndProviderId(OauthProvider provider, String providerId);
 
-    Optional<User> findById(Long id);
-
     User save(User user);
 }

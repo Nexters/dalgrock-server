@@ -1,5 +1,7 @@
 package dalgrock.playlist.core.jwt;
 
+import dalgrock.playlist.core.exception.ErrorCode;
+import dalgrock.playlist.core.exception.UnauthorizedException;
 import dalgrock.playlist.model.UserPrincipal;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -69,7 +71,7 @@ public class JwtTokenProvider {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception e) {
-            throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+            throw new UnauthorizedException(ErrorCode.AUTH_INVALID_TOKEN.getMessage());
         }
     }
 }
