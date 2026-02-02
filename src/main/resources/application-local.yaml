@@ -46,3 +46,8 @@ springdoc:
 jwt:
   secret: ${JWT_SECRET_KEY}
   expiration: 3600000
+
+app:
+  auth:
+    host: https://pliview.kr
+    redirect-uri: https://pliview.kr

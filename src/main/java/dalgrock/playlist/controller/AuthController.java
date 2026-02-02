@@ -5,7 +5,6 @@ import dalgrock.playlist.core.exception.UserNotFoundException;
 import dalgrock.playlist.infrastructure.repository.UserRepository;
 import dalgrock.playlist.model.User;
 import dalgrock.playlist.model.UserPrincipal;
-import dalgrock.playlist.service.dto.response.LoginResponse;
 import dalgrock.playlist.service.dto.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,32 +26,28 @@ public class AuthController {
     private final UserRepository userRepository;
 
     @Operation(
-            summary = "카카오 로그인",
+            summary = "카카오 로그인 시작",
             description = """
-                    카카오 OAuth2를 통한 소셜 로그인을 수행합니다.
+                    카카오 OAuth2 로그인 플로우를 시작합니다.
                     
-                    **실제 로그인 플로우:**
-                    1. 클라이언트는 GET /oauth2/authorization/kakao 로 리다이렉트
-                    2. 카카오 로그인 페이지로 이동
-                    3. 사용자 인증 후 콜백 처리
-                    4. JWT 토큰이 포함된 응답 반환
+                    **실제 동작:**
+                    - Spring Security가 이 요청을 가로채서 처리합니다
+                    - 사용자를 카카오 로그인 페이지로 리다이렉트합니다
+                    
+                    **전체 플로우:**
+                    1. 클라이언트가 이 엔드포인트로 접속 (GET)
+                    2. 카카오 로그인 페이지로 리다이렉트 (302)
+                    3. 사용자가 카카오에서 인증
+                    4. 카카오가 /login/oauth2/code/kakao 로 콜백
+                    5. 인증 성공 시 /oauth-callback.html?token={jwt} 로 리다이렉트
+                    
+                    **주의:** 이 메서드는 Swagger 문서화용이며 실제로는 실행되지 않습니다.
                     """
     )
     @ApiResponses({
             @ApiResponse(
-                    responseCode = "200",
-                    description = "로그인 성공",
-                    content = @Content(schema = @Schema(implementation = LoginResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "잘못된 요청 (지원하지 않는 Provider 등)",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "인증 실패",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    responseCode = "302",
+                    description = "카카오 로그인 페이지로 리다이렉트"
             ),
             @ApiResponse(
                     responseCode = "500",
@@ -61,9 +56,7 @@ public class AuthController {
             )
     })
     @GetMapping("/oauth2/authorization/kakao")
-    public LoginResponse kakaoLogin() {
-        throw new UnsupportedOperationException(
-                "이 엔드포인트는 Swagger 명세 제공용이며, 실제로는 Spring Security가 /oauth2/authorization/kakao 를 처리합니다.");
+    public void loginWithKakao() {
     }
 
     @Operation(

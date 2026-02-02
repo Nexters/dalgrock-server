@@ -9,15 +9,20 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    @Value("${app.auth.redirect-uri}")
+    private String targetUrl;
 
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
@@ -46,12 +51,20 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .orElseThrow(UserNotFoundException::new);
     }
 
-    private void redirectToCallback(HttpServletRequest request, HttpServletResponse response, String accessToken) throws IOException {
-        String targetUrl = UriComponentsBuilder.fromUriString("/oauth-callback.html")
-                .queryParam("token", accessToken)
-                .build()
-                .toUriString();
+    private void redirectToCallback(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String accessToken
+    ) throws IOException {
+        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
+                .path("/")
+                .httpOnly(true)
+                .secure(false)      // https: true, http: false
+                .sameSite("Lax")    // Lax, None
+                .maxAge(3600)
+                .build();
 
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
