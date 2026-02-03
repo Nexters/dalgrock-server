@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity(name = "weekly")
 @Table(name = "weekly")
-public class Weekly {
+public class Weekly extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)

@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity(name = "emotions")
 @Table(name = "emotions")
-public class Emotion {
+public class Emotion extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
