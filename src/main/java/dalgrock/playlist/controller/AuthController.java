@@ -1,6 +1,7 @@
 package dalgrock.playlist.controller;
 
-import dalgrock.playlist.controller.exception.ErrorResponse;import dalgrock.playlist.infrastructure.repository.UserRepository;
+import dalgrock.playlist.controller.exception.ErrorResponse;
+import dalgrock.playlist.infrastructure.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
