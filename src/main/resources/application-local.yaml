@@ -51,3 +51,5 @@ app:
   auth:
     host: https://pliview.kr
     redirect-uri: https://pliview.kr
+    secure-cookie: false
+    samesite-cookie: Lax

@@ -24,6 +24,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Value("${app.auth.redirect-uri}")
     private String targetUrl;
 
+    @Value("${app.auth.samesite-cookie}")
+    private String sameSite;
+
+    @Value("${app.auth.secure-cookie}")
+    private Boolean secureHttp;
+
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
 
@@ -59,8 +65,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
                 .path("/")
                 .httpOnly(true)
-                .secure(false)      // https: true, http: false
-                .sameSite("Lax")    // Lax, None
+                .secure(secureHttp)
+                .sameSite(sameSite)    // Lax, None
                 .maxAge(3600)
                 .build();
 
