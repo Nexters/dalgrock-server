@@ -30,13 +30,11 @@ public class Record extends BaseTimeEntity {
     private String thumbnail;
     private String location;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "music_id", nullable = false)
-    private Music music;
+    @Column(name = "music_id", nullable = false)
+    private Long musicId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emotion_id", nullable = false)
