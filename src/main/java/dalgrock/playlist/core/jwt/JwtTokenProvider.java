@@ -1,11 +1,12 @@
 package dalgrock.playlist.core.jwt;
 
+import dalgrock.playlist.core.exception.ErrorCode;
+import dalgrock.playlist.core.exception.UnauthorizedException;
 import dalgrock.playlist.model.UserPrincipal;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import java.security.Key;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtTokenProvider {
 
-    private final Key key;
+    private final SecretKey key;
     private final long accessTokenExpiration;
 
     public JwtTokenProvider(
@@ -43,7 +44,7 @@ public class JwtTokenProvider {
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
-                    .verifyWith((SecretKey) key)
+                    .verifyWith(key)
                     .build()
                     .parseSignedClaims(token);
             return true;
@@ -64,12 +65,12 @@ public class JwtTokenProvider {
     private Claims parseClaims(String token) {
         try {
             return Jwts.parser()
-                    .verifyWith((SecretKey) key)
+                    .verifyWith(key)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception e) {
-            throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+            throw new UnauthorizedException(ErrorCode.AUTH_INVALID_TOKEN.getMessage());
         }
     }
 }

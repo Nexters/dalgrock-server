@@ -1,5 +1,6 @@
 package dalgrock.playlist.config;
 
+import dalgrock.playlist.core.exception.UserNotFoundException;
 import dalgrock.playlist.core.jwt.JwtTokenProvider;
 import dalgrock.playlist.infrastructure.repository.UserRepository;
 import dalgrock.playlist.model.OauthProvider;
@@ -8,15 +9,26 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    @Value("${app.auth.redirect-uri}")
+    private String targetUrl;
+
+    @Value("${app.auth.samesite-cookie}")
+    private String sameSite;
+
+    @Value("${app.auth.secure-cookie}")
+    private Boolean secureHttp;
 
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
@@ -29,22 +41,36 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     ) throws IOException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        // 1. OAuth2User의 attributes에서 providerId 추출
-        String providerId = String.valueOf(oAuth2User.getAttributes().get("id"));
-
-        // 2. DB에서 실제 User 엔티티 조회
-        User user = userRepository.findByProviderAndProviderId(OauthProvider.KAKAO, providerId)
-                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
-
-        // 3. User의 실제 ID(PK)와 role로 JWT 생성
+        String providerId = extractProviderId(oAuth2User);
+        User user = findUser(providerId);
         String accessToken = tokenProvider.createAccessToken(user.getId(), user.getRole().name());
 
-        // 4. 콜백 페이지로 리다이렉트 (토큰을 쿼리 파라미터로 전달)
-        String targetUrl = UriComponentsBuilder.fromUriString("/oauth-callback.html")
-                .queryParam("token", accessToken)
-                .build()
-                .toUriString();
+        redirectToCallback(request, response, accessToken);
+    }
 
+    private String extractProviderId(OAuth2User oAuth2User) {
+        return String.valueOf(oAuth2User.getAttributes().get("id"));
+    }
+
+    private User findUser(String providerId) {
+        return userRepository.findByProviderAndProviderId(OauthProvider.KAKAO, providerId)
+                .orElseThrow(UserNotFoundException::new);
+    }
+
+    private void redirectToCallback(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String accessToken
+    ) throws IOException {
+        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
+                .path("/")
+                .httpOnly(true)
+                .secure(secureHttp)
+                .sameSite(sameSite)    // Lax, None
+                .maxAge(3600)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
