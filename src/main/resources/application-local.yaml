@@ -12,6 +12,27 @@ spring:
       hibernate:
         format_sql: true
 
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+            authorization-grant-type: authorization_code
+            client-authentication-method: client_secret_post
+            client-name: Kakao
+            scope:
+              - profile_nickname
+              - profile_image
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
 springdoc:
   api-docs:
     path: /api-docs
@@ -21,3 +42,14 @@ springdoc:
     display-operation-id: true
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
+
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  expiration: 3600000
+
+app:
+  auth:
+    host: https://pliview.kr
+    redirect-uri: https://pliview.kr
+    secure-cookie: false
+    samesite-cookie: Lax
