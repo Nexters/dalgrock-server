@@ -7,7 +7,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import java.security.Key;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +17,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtTokenProvider {
 
-    private final Key key;
+    private final SecretKey key;
     private final long accessTokenExpiration;
 
     public JwtTokenProvider(
@@ -45,7 +44,7 @@ public class JwtTokenProvider {
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
-                    .verifyWith((SecretKey) key)
+                    .verifyWith(key)
                     .build()
                     .parseSignedClaims(token);
             return true;
@@ -66,7 +65,7 @@ public class JwtTokenProvider {
     private Claims parseClaims(String token) {
         try {
             return Jwts.parser()
-                    .verifyWith((SecretKey) key)
+                    .verifyWith(key)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
