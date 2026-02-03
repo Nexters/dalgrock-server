@@ -3,3 +3,21 @@ spring:
     url: jdbc:postgresql://localhost:5432/playlist
     username: playlist2026
     password: Playlist2026!
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    display-operation-id: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
