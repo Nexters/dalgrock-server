@@ -9,16 +9,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Builder
@@ -34,6 +34,10 @@ public class Record extends BaseTimeEntity {
 
     private String thumbnail;
     private String location;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String content;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
