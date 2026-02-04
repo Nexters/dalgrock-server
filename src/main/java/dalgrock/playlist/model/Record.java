@@ -43,7 +43,7 @@ public class Record extends BaseTimeEntity {
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
-            name = "record_emotions",
+            name = "emotions",
             joinColumns = @JoinColumn(name = "record_id")
     )
     @Builder.Default
@@ -51,7 +51,7 @@ public class Record extends BaseTimeEntity {
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
-            name = "record_situations",
+            name = "situations",
             joinColumns = @JoinColumn(name = "record_id")
     )
     @Builder.Default

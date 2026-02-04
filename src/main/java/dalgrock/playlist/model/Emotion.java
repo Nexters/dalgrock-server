@@ -9,14 +9,9 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Entity(name = "emotions")
-@Table(name = "emotions")
-public class Emotion extends BaseTimeEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
+@AllArgsConstructor
+@Embeddable
+public class Emotion {
 
     @Column(name = "value", nullable = false)
     private String value;
