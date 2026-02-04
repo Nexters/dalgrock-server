@@ -13,6 +13,9 @@ import lombok.NoArgsConstructor;
 @Embeddable
 public class Situation {
 
+    @Column(name = "category", nullable = false)
+    private String category;
+
     @Column(name = "value", nullable = false)
     private String value;
 }

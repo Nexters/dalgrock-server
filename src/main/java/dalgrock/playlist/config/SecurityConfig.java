@@ -58,6 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/login-test.html", "/oauth-callback.html").permitAll()
+                        .requestMatchers("/v1/records/detail/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class)

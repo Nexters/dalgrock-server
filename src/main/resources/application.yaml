@@ -8,10 +8,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+    defer-datasource-initialization: true  # 중요! JPA 테이블 생성 후 data.sql 실행
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+  sql:
+    init:
+      mode: always  # 항상 실행 (embedded, always, never)
+      encoding: UTF-8
 
   security:
     oauth2:
