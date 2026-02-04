@@ -1,19 +1,13 @@
 package dalgrock.playlist.model;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity(name = "emotions")
@@ -24,6 +18,6 @@ public class Emotion extends BaseTimeEntity {
     @Column(nullable = false)
     private Long id;
 
+    @Column(name = "value", nullable = false)
     private String value;
-    
 }

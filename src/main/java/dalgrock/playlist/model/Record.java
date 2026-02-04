@@ -1,6 +1,8 @@
 package dalgrock.playlist.model;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -14,6 +16,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Builder
@@ -36,13 +41,21 @@ public class Record extends BaseTimeEntity {
     @Column(name = "music_id", nullable = false)
     private Long musicId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "emotion_id", nullable = false)
-    private Emotion emotion;
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "record_emotions",
+            joinColumns = @JoinColumn(name = "record_id")
+    )
+    @Builder.Default
+    private List<Emotion> emotions = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "situation_id", nullable = false)
-    private Situation situation;
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "record_situations",
+            joinColumns = @JoinColumn(name = "record_id")
+    )
+    @Builder.Default
+    private List<Situation> situations = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "weekly_id", nullable = false)
