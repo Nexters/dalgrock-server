@@ -11,7 +11,6 @@ import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
 import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -21,9 +20,7 @@ public class RecordService {
     private final RecordRepository recordRepository;
     private final RecordMusicRepository recordMusicRepository;
 
-    public GetRecordDetailResponse getRecordDetail(OAuth2User user, Long recordId) {
-        Long userId = user.getAttribute("sub");
-
+    public GetRecordDetailResponse getRecordDetail(Long userId, Long recordId) {
         Record record = recordRepository.findById(recordId)
                 .orElseThrow(() -> new RecordNotFoundException(ErrorCode.RECORD_NOT_FOUND.getMessage()));
 

@@ -66,5 +66,9 @@ app:
   auth:
     host: https://pliview.kr
     redirect-uri: https://pliview.kr/auth/kakao/callback
-    secure-cookie: true
-    samesite-cookie: Lax
+    secure-cookie: false
+    samesite-cookie: None
+
+logging:
+  level:
+    org.springframework.security: DEBUG
