@@ -6,11 +6,16 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
+    defer-datasource-initialization: true
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+
+  sql:
+    init:
+      mode: always
 
   security:
     oauth2:
@@ -19,7 +24,7 @@ spring:
           kakao:
             client-id: ${KAKAO_CLIENT_ID}
             client-secret: ${KAKAO_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+            redirect-uri: '{baseUrl}/login/oauth2/code/kakao'
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
             client-name: Kakao
@@ -50,6 +55,6 @@ jwt:
 app:
   auth:
     host: https://pliview.kr
-    redirect-uri: https://pliview.kr
+    redirect-uri: https://pliview.kr/auth/kakao/callback
     secure-cookie: false
-    samesite-cookie: Lax
+    samesite-cookie: None

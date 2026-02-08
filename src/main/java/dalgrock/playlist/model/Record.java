@@ -11,14 +11,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Builder
@@ -35,11 +34,11 @@ public class Record extends BaseTimeEntity {
     private String thumbnail;
     private String location;
 
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
     @Column(name = "user_id", nullable = false)
     private Long userId;
-
-    @Column(name = "music_id", nullable = false)
-    private Long musicId;
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
@@ -60,4 +59,16 @@ public class Record extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "weekly_id", nullable = false)
     private Weekly weekly;
+
+    public List<String> getEmotionsToString() {
+        return this.emotions.stream()
+                .map(Emotion::getValue)
+                .toList();
+    }
+
+    public List<String> getSituationsToString() {
+        return this.situations.stream()
+                .map(Situation::getValue)
+                .toList();
+    }
 }
