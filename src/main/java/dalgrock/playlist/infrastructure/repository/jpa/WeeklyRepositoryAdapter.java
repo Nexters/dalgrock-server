@@ -16,4 +16,14 @@ public class WeeklyRepositoryAdapter implements WeeklyRepository {
     public Optional<Weekly> findById(Long id) {
         return jpaWeeklyRepository.findById(id);
     }
+
+    @Override
+    public Optional<Weekly> findByYearAndMonthAndWeek(int year, int month, int week) {
+        return jpaWeeklyRepository.findByYearAndMonthAndWeek(year, month, week);
+    }
+
+    @Override
+    public Weekly save(Weekly weekly) {
+        return jpaWeeklyRepository.save(weekly);
+    }
 }

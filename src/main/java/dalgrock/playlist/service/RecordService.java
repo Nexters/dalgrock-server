@@ -3,7 +3,6 @@ package dalgrock.playlist.service;
 import dalgrock.playlist.core.exception.ErrorCode;
 import dalgrock.playlist.core.exception.RecordNotFoundException;
 import dalgrock.playlist.core.exception.UnauthorizedException;
-import dalgrock.playlist.core.exception.WeeklyNotFoundException;
 import dalgrock.playlist.infrastructure.repository.MusicRepository;
 import dalgrock.playlist.infrastructure.repository.RecordMusicRepository;
 import dalgrock.playlist.infrastructure.repository.RecordRepository;
@@ -20,6 +19,8 @@ import dalgrock.playlist.service.dto.command.CreateRecordMusicCommand;
 import dalgrock.playlist.service.dto.response.CreateRecordResponse;
 import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -54,8 +55,12 @@ public class RecordService {
 
     @Transactional
     public CreateRecordResponse createRecord(Long userId, CreateRecordCommand command) {
-        Weekly weekly = weeklyRepository.findById(command.weeklyId())
-                .orElseThrow(() -> new WeeklyNotFoundException(ErrorCode.WEEKLY_NOT_FOUND.getMessage()));
+        LocalDate today = LocalDate.now();
+        int year = getYearOfWeek(today);
+        int month = getMonthOfWeek(today);
+        int week = getWeekOfMonth(today);
+
+        Weekly weekly = findOrCreateWeekly(year, month, week);
 
         List<Emotion> emotions = new ArrayList<>(toEmotions(command.emotions()));
         List<Situation> situations = new ArrayList<>(toSituations(command.situations()));
@@ -120,6 +125,35 @@ public class RecordService {
                             .genre(null)
                             .build();
                     return musicRepository.save(newMusic);
+                });
+    }
+
+    /**
+     * 주차는 월요일 시작 ~ 일요일 끝.
+     * 오늘 날짜가 속한 주의 월요일 기준으로 (year, month, week) 계산.
+     */
+    private int getYearOfWeek(LocalDate date) {
+        return date.with(DayOfWeek.MONDAY).getYear();
+    }
+
+    private int getMonthOfWeek(LocalDate date) {
+        return date.with(DayOfWeek.MONDAY).getMonthValue();
+    }
+
+    private int getWeekOfMonth(LocalDate date) {
+        LocalDate monday = date.with(DayOfWeek.MONDAY);
+        return (monday.getDayOfMonth() - 1) / 7 + 1;
+    }
+
+    private Weekly findOrCreateWeekly(int year, int month, int week) {
+        return weeklyRepository.findByYearAndMonthAndWeek(year, month, week)
+                .orElseGet(() -> {
+                    Weekly newWeekly = Weekly.builder()
+                            .year(year)
+                            .month(month)
+                            .week(week)
+                            .build();
+                    return weeklyRepository.save(newWeekly);
                 });
     }
 }

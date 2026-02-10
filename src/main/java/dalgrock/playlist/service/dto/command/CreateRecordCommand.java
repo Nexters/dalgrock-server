@@ -7,7 +7,6 @@ public record CreateRecordCommand(
         List<String> emotions,
         String content,
         List<String> situations,
-        String location,
-        Long weeklyId
+        String location
 ) {
 }
