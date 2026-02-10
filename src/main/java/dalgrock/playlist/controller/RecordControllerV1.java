@@ -5,6 +5,7 @@ import dalgrock.playlist.service.RecordService;
 import dalgrock.playlist.service.dto.command.CreateRecordCommand;
 import dalgrock.playlist.service.dto.response.CreateRecordResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
+import dalgrock.playlist.service.dto.response.GetRecordResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,5 +38,12 @@ public class RecordControllerV1 {
             @RequestBody CreateRecordCommand command
     ) {
         return recordService.createRecord(principal.userId(), command);
+    }
+
+    @GetMapping("/")
+    public GetRecordResponse getRecords(
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return recordService.getRecords(principal.userId());
     }
 }

@@ -3,6 +3,7 @@ package dalgrock.playlist.infrastructure.repository.jpa;
 import dalgrock.playlist.infrastructure.repository.RecordRepository;
 import dalgrock.playlist.model.Record;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -26,5 +27,10 @@ public class RecordRepositoryAdapter implements RecordRepository {
     @Override
     public boolean existsByUserIdAndCreatedAtBetween(Long userId, LocalDateTime start, LocalDateTime end) {
         return jpaRecordRepository.existsByUserIdAndCreatedAtBetween(userId, start, end);
+    }
+
+    @Override
+    public List<Record> findByUserIdAndWeeklyIdIn(Long userId, List<Long> weeklyIds) {
+        return jpaRecordRepository.findByUserIdAndWeeklyIdInFetchWeekly(userId, weeklyIds);
     }
 }

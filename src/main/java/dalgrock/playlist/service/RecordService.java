@@ -18,13 +18,16 @@ import dalgrock.playlist.model.Weekly;
 import dalgrock.playlist.service.dto.command.CreateRecordCommand;
 import dalgrock.playlist.service.dto.command.CreateRecordMusicCommand;
 import dalgrock.playlist.service.dto.response.CreateRecordResponse;
-import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
+import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
+import dalgrock.playlist.service.dto.response.GetRecordResponse;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +56,72 @@ public class RecordService {
                 .toList();
 
         return GetRecordDetailResponse.of(record, recordMusicResponses);
+    }
+
+    /**
+     * 오늘·7일 전·14일 전 주차의 (year, month, week)로 해당 userId의 records를 조회한 뒤,
+     * 이번주 → 7일 전 주 → 14일 전 주 순으로 응답을 가공하여 반환.
+     */
+    public GetRecordResponse getRecords(Long userId) {
+        LocalDate today = LocalDate.now();
+        List<LocalDate> weekDates = List.of(today, today.minusDays(7), today.minusDays(14));
+
+        List<WeekContext> weekContexts = weekDates.stream()
+                .map(d -> {
+                    int y = getYearOfWeek(d);
+                    int m = getMonthOfWeek(d);
+                    int w = getWeekOfMonth(d);
+                    return new WeekContext(y, m, w, weeklyRepository.findByYearAndMonthAndWeek(y, m, w));
+                })
+                .toList();
+
+        List<Long> weeklyIds = weekContexts.stream()
+                .flatMap(wc -> wc.weeklyOpt().stream())
+                .map(Weekly::getId)
+                .toList();
+
+        List<Record> records = weeklyIds.isEmpty()
+                ? List.of()
+                : recordRepository.findByUserIdAndWeeklyIdIn(userId, weeklyIds);
+
+        GetRecordResponse.TodayRecordItem todayItem = records.stream()
+                .filter(r -> r.getCreatedAt().toLocalDate().equals(today))
+                .findFirst()
+                .map(r -> new GetRecordResponse.TodayRecordItem(r.getId(), nullToEmpty(r.getThumbnail())))
+                .orElse(null);
+
+        List<GetRecordResponse.WeeklyGroupItem> weekly = weekContexts.stream()
+                .map(wc -> buildWeeklyGroupItem(wc, records))
+                .toList();
+
+        return new GetRecordResponse(todayItem, weekly);
+    }
+
+    private GetRecordResponse.WeeklyGroupItem buildWeeklyGroupItem(WeekContext wc, List<Record> records) {
+        String title = wc.weeklyOpt()
+                .map(w -> w.getTitle() != null ? w.getTitle() : formatWeeklyTitle(wc.month(), wc.week()))
+                .orElse(formatWeeklyTitle(wc.month(), wc.week()));
+        List<GetRecordResponse.WeeklyRecordItem> items = records.stream()
+                .filter(r -> sameWeek(r, wc.year(), wc.month(), wc.week()))
+                .sorted(Comparator.comparing(Record::getCreatedAt).reversed())
+                .map(r -> new GetRecordResponse.WeeklyRecordItem(r.getId(), nullToEmpty(r.getThumbnail()), r.getCreatedAt()))
+                .toList();
+        return new GetRecordResponse.WeeklyGroupItem(title, wc.year(), wc.month(), wc.week(), items);
+    }
+
+    private record WeekContext(int year, int month, int week, Optional<Weekly> weeklyOpt) {}
+
+    private static String nullToEmpty(String s) {
+        return s != null ? s : "";
+    }
+
+    private static String formatWeeklyTitle(int month, int week) {
+        return  month + "월 " + week + "주차";
+    }
+
+    private static boolean sameWeek(Record r, int year, int month, int week) {
+        Weekly w = r.getWeekly();
+        return w != null && w.getYear() == year && w.getMonth() == month && w.getWeek() == week;
     }
 
     @Transactional
