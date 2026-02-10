@@ -22,6 +22,9 @@ public enum ErrorCode {
 
     // Record
     RECORD_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "내 기록을 찾을 수 없습니다."),
+
+    // Weekly
+    WEEKLY_NOT_FOUND(HttpStatus.NOT_FOUND, "W001", "주차를 찾을 수 없습니다."),
     ;
 
     private final HttpStatus status;

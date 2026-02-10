@@ -6,4 +6,6 @@ import java.util.Optional;
 public interface RecordRepository {
 
     Optional<Record> findById(Long id);
+
+    Record save(Record record);
 }

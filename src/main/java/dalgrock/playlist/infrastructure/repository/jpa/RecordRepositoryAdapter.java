@@ -16,4 +16,9 @@ public class RecordRepositoryAdapter implements RecordRepository {
     public Optional<Record> findById(Long id) {
         return jpaRecordRepository.findById(id);
     }
+
+    @Override
+    public Record save(Record record) {
+        return jpaRecordRepository.save(record);
+    }
 }
