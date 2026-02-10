@@ -1,6 +1,7 @@
 package dalgrock.playlist.service;
 
 import dalgrock.playlist.core.exception.ErrorCode;
+import dalgrock.playlist.core.exception.RecordAlreadyExistsTodayException;
 import dalgrock.playlist.core.exception.RecordNotFoundException;
 import dalgrock.playlist.core.exception.UnauthorizedException;
 import dalgrock.playlist.infrastructure.repository.MusicRepository;
@@ -21,6 +22,7 @@ import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -56,9 +58,17 @@ public class RecordService {
     @Transactional
     public CreateRecordResponse createRecord(Long userId, CreateRecordCommand command) {
         LocalDate today = LocalDate.now();
-        int year = getYearOfWeek(today);
-        int month = getMonthOfWeek(today);
-        int week = getWeekOfMonth(today);
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
+
+        if (recordRepository.existsByUserIdAndCreatedAtBetween(userId, startOfDay, startOfNextDay)) {
+            throw new RecordAlreadyExistsTodayException();
+        }
+
+        LocalDate todayForWeekly = LocalDate.now();
+        int year = getYearOfWeek(todayForWeekly);
+        int month = getMonthOfWeek(todayForWeekly);
+        int week = getWeekOfMonth(todayForWeekly);
 
         Weekly weekly = findOrCreateWeekly(year, month, week);
 

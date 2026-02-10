@@ -22,6 +22,7 @@ public enum ErrorCode {
 
     // Record
     RECORD_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "내 기록을 찾을 수 없습니다."),
+    RECORD_ALREADY_EXISTS_TODAY(HttpStatus.CONFLICT, "R002", "오늘 이미 기록을 등록했습니다."),
 
     // Weekly
     WEEKLY_NOT_FOUND(HttpStatus.NOT_FOUND, "W001", "주차를 찾을 수 없습니다."),
