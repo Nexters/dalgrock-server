@@ -65,10 +65,9 @@ public class RecordService {
             throw new RecordAlreadyExistsTodayException();
         }
 
-        LocalDate todayForWeekly = LocalDate.now();
-        int year = getYearOfWeek(todayForWeekly);
-        int month = getMonthOfWeek(todayForWeekly);
-        int week = getWeekOfMonth(todayForWeekly);
+        int year = getYearOfWeek(today);
+        int month = getMonthOfWeek(today);
+        int week = getWeekOfMonth(today);
 
         Weekly weekly = findOrCreateWeekly(year, month, week);
 
