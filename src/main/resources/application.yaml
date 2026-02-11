@@ -72,3 +72,11 @@ app:
 logging:
   level:
     org.springframework.security: DEBUG
+
+spotify:
+  client-id: ${SPOTIFY_CLIENT_ID}
+  client-secret: ${SPOTIFY_CLIENT_SECRET}
+
+client:
+  connection-timeout: 5
+  read-timeout: 10
