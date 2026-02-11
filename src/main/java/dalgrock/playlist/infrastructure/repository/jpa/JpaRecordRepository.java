@@ -11,6 +11,6 @@ public interface JpaRecordRepository extends JpaRepository<Record, Long> {
 
     boolean existsByUserIdAndCreatedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
 
-    @Query("SELECT r FROM Record r JOIN FETCH r.weekly WHERE r.userId = :userId AND r.weekly.id IN :weeklyIds")
+    @Query("SELECT r FROM records r JOIN FETCH r.weekly WHERE r.userId = :userId AND r.weekly.id IN :weeklyIds")
     List<Record> findByUserIdAndWeeklyIdInFetchWeekly(@Param("userId") Long userId, @Param("weeklyIds") List<Long> weeklyIds);
 }

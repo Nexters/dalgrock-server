@@ -192,8 +192,8 @@ public class RecordService {
     }
 
     private Music findOrCreateMusic(CreateRecordMusicCommand command) {
-        String artist = command.artist() != null ? command.artist() : "";
-        String title = command.title() != null ? command.title() : "";
+        String artist = command.artist();
+        String title = command.title();
         return musicRepository.findByArtistAndTitle(artist, title)
                 .orElseGet(() -> {
                     Music newMusic = Music.builder()
