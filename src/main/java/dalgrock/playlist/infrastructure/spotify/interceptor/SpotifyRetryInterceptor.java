@@ -26,7 +26,7 @@ public class SpotifyRetryInterceptor implements ClientHttpRequestInterceptor {
                 ClientHttpResponse response = execution.execute(request, body);
 
                 if (response.getStatusCode().is5xxServerError() && attempt < MAX_RETRIES) {
-                    log.warn("5xx error occurred. Retrying... (attempt: {}/{})", attempt + 1, MAX_RETRIES + 1);
+                    log.warn("5xx 서버 오류 발생 - 재시도 중... (시도: {}/{})", attempt + 1, MAX_RETRIES + 1);
                     attempt++;
                     continue;
                 }
@@ -35,7 +35,7 @@ public class SpotifyRetryInterceptor implements ClientHttpRequestInterceptor {
             } catch (IOException e) {
                 lastException = e;
                 if (attempt < MAX_RETRIES) {
-                    log.warn("Network error occurred. Retrying... (attempt: {}/{})", attempt + 1, MAX_RETRIES + 1);
+                    log.warn("네트워크 오류 발생 - 재시도 중... (시도: {}/{})", attempt + 1, MAX_RETRIES + 1);
                     attempt++;
                 } else {
                     throw e;

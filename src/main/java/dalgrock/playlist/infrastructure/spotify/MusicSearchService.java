@@ -23,21 +23,21 @@ public class MusicSearchService {
     @Transactional(readOnly = true)
     public List<MusicSearchResponse> searchTracks(String keyword) {
         String normalizedKeyword = keyword.trim();
-        log.info("Searching tracks with keyword: {}", normalizedKeyword);
+        log.info("음악 검색 시작: 키워드={}", normalizedKeyword);
 
         List<MusicCommand> dbResults = searchFromDatabase(normalizedKeyword);
 
         if (!dbResults.isEmpty()) {
-            log.info("DB_HIT: Found {} results from Database", dbResults.size());
+            log.info("DB_HIT: 데이터베이스에서 {}개 결과 발견", dbResults.size());
             return dbResults.stream()
                     .map(MusicSearchResponse::from)
                     .toList();
         }
 
-        log.info("DB_MISS: Calling external provider: {}", musicSearchClient.getProviderName());
+        log.info("DB_MISS: 외부 API 호출 - 제공자={}", musicSearchClient.getProviderName());
         List<MusicCommand> externalResults = musicSearchClient.search(normalizedKeyword);
 
-        log.info("Returning {} results from {}", externalResults.size(), musicSearchClient.getProviderName());
+        log.info("{}에서 {}개 결과 반환", musicSearchClient.getProviderName(), externalResults.size());
         return externalResults.stream()
                 .map(MusicSearchResponse::from)
                 .toList();

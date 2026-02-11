@@ -41,14 +41,14 @@ public class SpotifyMusicSearchClient implements MusicSearchClient {
                     .body(SpotifySearchResponse.class);
 
             if (response == null || response.tracks() == null || response.tracks().items() == null) {
-                log.warn("No results from Spotify API");
+                log.warn("Spotify API 응답 없음");
                 return List.of();
             }
 
-            log.info("Spotify API returned {} results", response.tracks().items().size());
+            log.info("Spotify API 검색 완료: {}개 결과", response.tracks().items().size());
             return mapToDomainModels(response.tracks().items());
         } catch (Exception e) {
-            log.error("Failed to search from Spotify API", e);
+            log.error("Spotify API 검색 실패", e);
             return List.of();
         }
     }

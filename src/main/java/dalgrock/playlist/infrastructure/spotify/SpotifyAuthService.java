@@ -34,11 +34,11 @@ public class SpotifyAuthService {
         TokenCache current = tokenCache.get();
 
         if (isTokenValid(current)) {
-            log.debug("Using cached Spotify access token");
+            log.debug("캐시된 Spotify 액세스 토큰 사용");
             return current.token();
         }
 
-        log.info("Fetching new Spotify access token");
+        log.info("새로운 Spotify 액세스 토큰 발급 요청");
         return fetchAndCacheNewToken();
     }
 
@@ -51,7 +51,7 @@ public class SpotifyAuthService {
         boolean isValid = Instant.now().isBefore(expiryWithBuffer);
 
         if (!isValid) {
-            log.debug("Token will expire soon. Current time: {}, Expiry: {}",
+            log.debug("토큰 만료 임박 - 현재 시각: {}, 만료 시각: {}",
                     Instant.now(), cache.expiryTime());
         }
 
@@ -70,14 +70,14 @@ public class SpotifyAuthService {
                 .body(SpotifyTokenResponse.class);
 
         if (response == null) {
-            throw new IllegalStateException("Failed to fetch Spotify access token");
+            throw new IllegalStateException("Spotify 액세스 토큰 발급 실패");
         }
 
         Instant expiryTime = Instant.now().plusSeconds(response.expiresIn());
         TokenCache newCache = new TokenCache(response.accessToken(), expiryTime);
         tokenCache.set(newCache);
 
-        log.info("New Spotify token cached. Expires at: {}", expiryTime);
+        log.info("새 Spotify 토큰 캐시 완료 - 만료 시각: {}", expiryTime);
         return newCache.token();
     }
 
