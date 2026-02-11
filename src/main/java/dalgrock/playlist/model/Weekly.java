@@ -25,5 +25,13 @@ public class Weekly extends BaseTimeEntity {
     private Long id;
 
     private String title;
-    
+
+    @Column(nullable = false)
+    private int year;
+
+    @Column(nullable = false)
+    private int month;
+
+    @Column(nullable = false)
+    private int week;
 }
