@@ -1,6 +1,6 @@
 package dalgrock.playlist.controller;
 
-import dalgrock.playlist.infrastructure.spotify.SpotifySearchService;
+import dalgrock.playlist.infrastructure.spotify.MusicSearchService;
 import dalgrock.playlist.service.dto.response.MusicSearchResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -19,11 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/musics")
 public class MusicControllerV1 {
 
-    private final SpotifySearchService spotifySearchService;
+    private final MusicSearchService musicSearchService;
 
     @Operation(summary = "음악 검색", description = "키워드로 음악을 검색합니다")
     @GetMapping("/search")
     public List<MusicSearchResponse> searchMusic(@RequestParam String keyword) {
-        return spotifySearchService.searchTracks(keyword);
+        return musicSearchService.searchTracks(keyword);
     }
 }

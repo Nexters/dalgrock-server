@@ -3,6 +3,7 @@ package dalgrock.playlist.infrastructure.repository.jpa;
 import dalgrock.playlist.model.Music;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,4 +21,11 @@ public interface JpaMusicRepository extends JpaRepository<Music, Long> {
     boolean existsBySpotifyId(String spotifyId);
 
     Optional<Music> findByArtistAndTitle(String artist, String title);
+
+    @Query("""
+            SELECT m.spotifyId 
+            FROM musics m 
+            WHERE m.spotifyId IN :spotifyIds
+            """)
+    Set<String> findExistingSpotifyIds(@Param("spotifyIds") Set<String> spotifyIds);
 }

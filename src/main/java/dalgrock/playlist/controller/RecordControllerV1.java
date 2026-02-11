@@ -7,6 +7,7 @@ import dalgrock.playlist.service.dto.command.CreateRecordCommand;
 import dalgrock.playlist.service.dto.command.CreateRecordMusicCommand;
 import dalgrock.playlist.service.dto.response.CreateRecordResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -31,6 +32,7 @@ public class RecordControllerV1 {
 
     private final RecordService recordService;
 
+    @Operation(summary = "내 기록 상세 조회", description = "내 기록 ID로 기록을 상세 조회합니다")
     @GetMapping("/detail/{recordId}")
     public GetRecordDetailResponse getRecordDetail(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -39,7 +41,8 @@ public class RecordControllerV1 {
         return recordService.getRecordDetail(principal.userId(), recordId);
     }
 
-    @PostMapping()
+    @Operation(summary = "내 기록 추가", description = "오늘의 내 기록을 추가합니다")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CreateRecordResponse createRecord(
             @AuthenticationPrincipal UserPrincipal principal,

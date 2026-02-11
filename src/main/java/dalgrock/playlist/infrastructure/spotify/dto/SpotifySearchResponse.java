@@ -4,16 +4,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record SpotifySearchResponse(
-        List<ItemResponse> itemResponses
+        TracksResponse tracks
 ) {
+
+    public record TracksResponse(
+            List<ItemResponse> items
+    ) {
+    }
 
     public record ItemResponse(
             String id,
             String name,
-            List<ArtistResponse> artistResponses,
-            AlbumResponse albumResponse,
+            List<ArtistResponse> artists,
+            AlbumResponse album,
             @JsonProperty("external_urls")
-            ExternalUrlsResponse externalUrlsResponse
+            ExternalUrlsResponse externalUrls
     ) {
     }
 
@@ -25,7 +30,7 @@ public record SpotifySearchResponse(
 
     public record AlbumResponse(
             String name,
-            List<ImageResponse> imageResponses
+            List<ImageResponse> images
     ) {
     }
 

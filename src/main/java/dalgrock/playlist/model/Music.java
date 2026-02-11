@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 @Entity(name = "musics")
 @Table(name = "musics")
 public class Music extends BaseTimeEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
