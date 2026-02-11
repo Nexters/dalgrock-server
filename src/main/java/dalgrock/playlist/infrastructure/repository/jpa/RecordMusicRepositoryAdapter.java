@@ -22,4 +22,9 @@ public class RecordMusicRepositoryAdapter implements RecordMusicRepository {
     public RecordMusic save(RecordMusic recordMusic) {
         return jpaRecordMusicRepository.save(recordMusic);
     }
+
+    @Override
+    public List<RecordMusic> saveAll(List<RecordMusic> recordMusics) {
+        return jpaRecordMusicRepository.saveAll(recordMusics);
+    }
 }

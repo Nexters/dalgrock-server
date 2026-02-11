@@ -9,4 +9,6 @@ public interface RecordMusicRepository {
     List<GetRecordMusicDto> findAllByRecordId(Long id);
 
     RecordMusic save(RecordMusic recordMusic);
+
+    List<RecordMusic> saveAll(List<RecordMusic> recordMusics);
 }
