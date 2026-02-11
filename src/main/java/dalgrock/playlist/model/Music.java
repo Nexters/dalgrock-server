@@ -25,10 +25,15 @@ public class Music extends BaseTimeEntity {
     private Long id;
 
     private String title;
-    
+
     private String artist;
-    
+
     private String genre;
-    
+
     private String thumbnail;
+
+    @Column(unique = true)
+    private String spotifyId;
+
+    private String spotifyUrl;
 }
