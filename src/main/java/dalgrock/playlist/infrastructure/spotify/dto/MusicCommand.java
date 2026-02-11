@@ -12,11 +12,11 @@ public record MusicCommand(
 
     public static MusicCommand from(Music music) {
         return new MusicCommand(
-                music.getSpotifyId(),
+                null,
                 music.getTitle(),
                 music.getArtist(),
                 music.getThumbnail(),
-                music.getSpotifyUrl()
+                null
         );
     }
 }

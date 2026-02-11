@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +18,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity(name = "musics")
-@Table(name = "musics")
+@Table(
+    name = "musics",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_music_artist_title",
+        columnNames = {"artist", "title"}
+    )
+)
 public class Music extends BaseTimeEntity {
 
     @Id
@@ -25,16 +32,13 @@ public class Music extends BaseTimeEntity {
     @Column(nullable = false)
     private Long id;
 
+    @Column(nullable = false)
     private String title;
 
+    @Column(nullable = false)
     private String artist;
 
     private String genre;
 
     private String thumbnail;
-
-    @Column(unique = true)
-    private String spotifyId;
-
-    private String spotifyUrl;
 }

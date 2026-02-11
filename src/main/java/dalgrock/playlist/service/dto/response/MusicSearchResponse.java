@@ -6,14 +6,18 @@ import dalgrock.playlist.model.Music;
 public record MusicSearchResponse(
         String spotifyId,
         String title,
-        String artist
+        String artist,
+        String thumbnail,
+        String spotifyUrl
 ) {
 
     public static MusicSearchResponse from(Music music) {
         return new MusicSearchResponse(
-                music.getSpotifyId(),
+                null,
                 music.getTitle(),
-                music.getArtist()
+                music.getArtist(),
+                music.getThumbnail(),
+                null
         );
     }
 
@@ -21,7 +25,9 @@ public record MusicSearchResponse(
         return new MusicSearchResponse(
                 command.spotifyId(),
                 command.title(),
-                command.artist()
+                command.artist(),
+                command.thumbnail(),
+                command.spotifyUrl()
         );
     }
 }

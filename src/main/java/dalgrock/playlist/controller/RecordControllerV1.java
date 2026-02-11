@@ -54,7 +54,11 @@ public class RecordControllerV1 {
 
     private CreateRecordCommand toCommand(CreateRecordRequest request) {
         List<CreateRecordMusicCommand> musicCommands = request.musics().stream()
-                .map(m -> new CreateRecordMusicCommand(m.title(), m.artist(), m.thumbnail()))
+                .map(m -> new CreateRecordMusicCommand(
+                        m.title(),
+                        m.artist(),
+                        m.thumbnail()
+                ))
                 .collect(Collectors.toList());
         return new CreateRecordCommand(
                 musicCommands,

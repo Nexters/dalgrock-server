@@ -4,7 +4,6 @@ import dalgrock.playlist.infrastructure.repository.MusicRepository;
 import dalgrock.playlist.model.Music;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -22,16 +21,6 @@ public class MusicRepositoryAdapter implements MusicRepository {
     @Override
     public List<Music> searchByKeyword(String keyword) {
         return jpaMusicRepository.searchByKeyword(keyword);
-    }
-
-    @Override
-    public Set<String> findExistingSpotifyIds(Set<String> spotifyIds) {
-        return jpaMusicRepository.findExistingSpotifyIds(spotifyIds);
-    }
-
-    @Override
-    public boolean existsBySpotifyId(String spotifyId) {
-        return jpaMusicRepository.existsBySpotifyId(spotifyId);
     }
 
     @Override
