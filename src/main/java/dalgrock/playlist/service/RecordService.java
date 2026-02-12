@@ -24,6 +24,9 @@ import dalgrock.playlist.service.dto.response.GetRecordResponse;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -58,75 +61,63 @@ public class RecordService {
         return GetRecordDetailResponse.of(record, recordMusicResponses);
     }
 
+    private static final ZoneId APP_ZONE = ZoneId.of("Asia/Seoul");
+
     /**
-     * 오늘·7일 전·14일 전 주차의 (year, month, week)로 해당 userId의 records를 조회한 뒤,
-     * 이번주 → 7일 전 주 → 14일 전 주 순으로 응답을 가공하여 반환.
+     * 이번 주(월요일~일요일)에 해당하는 userId의 records를 조회하여
+     * recordId, createdAt, musics(thumbnail), emotions 형태로 반환.
+     * 주의 시작은 월요일, 끝은 일요일. 기준 시간대는 Asia/Seoul.
      */
     public GetRecordResponse getRecords(Long userId) {
-        LocalDate today = LocalDate.now();
-        List<LocalDate> weekDates = List.of(today, today.minusDays(7), today.minusDays(14));
+        LocalDate today = ZonedDateTime.now(APP_ZONE).toLocalDate();
+        LocalDate weekMonday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate weekSunday = weekMonday.plusDays(6);
 
-        List<WeekContext> weekContexts = weekDates.stream()
-                .map(d -> {
-                    int y = getYearOfWeek(d);
-                    int m = getMonthOfWeek(d);
-                    int w = getWeekOfMonth(d);
-                    return new WeekContext(y, m, w, weeklyRepository.findByYearAndMonthAndWeek(y, m, w));
-                })
-                .toList();
+        int year = getYearOfWeek(today);
+        int month = getMonthOfWeek(today);
+        int week = getWeekOfMonth(today);
 
-        List<Long> weeklyIds = weekContexts.stream()
-                .flatMap(wc -> wc.weeklyOpt().stream())
-                .map(Weekly::getId)
-                .toList();
+        Optional<Weekly> weeklyOpt = weeklyRepository.findByYearAndMonthAndWeek(year, month, week);
+        List<Record> records = weeklyOpt
+                .map(w -> recordRepository.findByUserIdAndWeeklyIdIn(userId, List.of(w.getId())))
+                .orElse(List.of());
 
-        List<Record> records = weeklyIds.isEmpty()
-                ? List.of()
-                : recordRepository.findByUserIdAndWeeklyIdIn(userId, weeklyIds);
-
-        GetRecordResponse.TodayRecordItem todayItem = records.stream()
-                .filter(r -> r.getCreatedAt().toLocalDate().equals(today))
-                .findFirst()
-                .map(r -> new GetRecordResponse.TodayRecordItem(r.getId(), nullToEmpty(r.getThumbnail())))
-                .orElse(null);
-
-        List<GetRecordResponse.WeeklyGroupItem> weekly = weekContexts.stream()
-                .map(wc -> buildWeeklyGroupItem(wc, records))
-                .toList();
-
-        return new GetRecordResponse(todayItem, weekly);
-    }
-
-    private GetRecordResponse.WeeklyGroupItem buildWeeklyGroupItem(WeekContext wc, List<Record> records) {
-        String title = wc.weeklyOpt()
-                .map(w -> w.getTitle() != null ? w.getTitle() : formatWeeklyTitle(wc.month(), wc.week()))
-                .orElse(formatWeeklyTitle(wc.month(), wc.week()));
-        List<GetRecordResponse.WeeklyRecordItem> items = records.stream()
-                .filter(r -> sameWeek(r, wc.year(), wc.month(), wc.week()))
+        List<GetRecordResponse.RecordItem> recordItems = records.stream()
+                .filter(r -> isDateInRange(r.getCreatedAt(), weekMonday, weekSunday))
                 .sorted(Comparator.comparing(Record::getCreatedAt).reversed())
-                .map(r -> new GetRecordResponse.WeeklyRecordItem(r.getId(), nullToEmpty(r.getThumbnail()), r.getCreatedAt()))
+                .map(this::toRecordItem)
                 .toList();
-        return new GetRecordResponse.WeeklyGroupItem(title, wc.year(), wc.month(), wc.week(), items);
+
+        return new GetRecordResponse(recordItems);
     }
 
-    private record WeekContext(int year, int month, int week, Optional<Weekly> weeklyOpt) {}
+    /** createdAt의 날짜가 [weekMonday, weekSunday] 안에 있는지 검사. 저장이 KST면 atZone(APP_ZONE), UTC면 UTC→Seoul 변환 필요. */
+    private static boolean isDateInRange(LocalDateTime createdAt, LocalDate weekMonday, LocalDate weekSunday) {
+        LocalDate d = createdAt.atZone(APP_ZONE).toLocalDate();
+        return !d.isBefore(weekMonday) && !d.isAfter(weekSunday);
+    }
+
+    private GetRecordResponse.RecordItem toRecordItem(Record record) {
+        List<GetRecordMusicDto> recordMusics = recordMusicRepository.findAllByRecordId(record.getId());
+        List<GetRecordResponse.MusicThumbnailItem> musics = recordMusics.stream()
+                .map(dto -> new GetRecordResponse.MusicThumbnailItem(nullToEmpty(dto.getThumbnail())))
+                .toList();
+        List<String> emotions = record.getEmotionsToString();
+        return new GetRecordResponse.RecordItem(
+                record.getId(),
+                record.getCreatedAt(),
+                musics,
+                emotions
+        );
+    }
 
     private static String nullToEmpty(String s) {
         return s != null ? s : "";
     }
 
-    private static String formatWeeklyTitle(int month, int week) {
-        return  month + "월 " + week + "주차";
-    }
-
-    private static boolean sameWeek(Record r, int year, int month, int week) {
-        Weekly w = r.getWeekly();
-        return w != null && w.getYear() == year && w.getMonth() == month && w.getWeek() == week;
-    }
-
     @Transactional
     public CreateRecordResponse createRecord(Long userId, CreateRecordCommand command) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = ZonedDateTime.now(APP_ZONE).toLocalDate();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
 
@@ -208,18 +199,18 @@ public class RecordService {
 
     /**
      * 주차는 월요일 시작 ~ 일요일 끝.
-     * 오늘 날짜가 속한 주의 월요일 기준으로 (year, month, week) 계산.
+     * previousOrSame(MONDAY)로 주의 첫날(월요일)을 명시적으로 구해 (year, month, week) 계산.
      */
     private int getYearOfWeek(LocalDate date) {
-        return date.with(DayOfWeek.MONDAY).getYear();
+        return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).getYear();
     }
 
     private int getMonthOfWeek(LocalDate date) {
-        return date.with(DayOfWeek.MONDAY).getMonthValue();
+        return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).getMonthValue();
     }
 
     private int getWeekOfMonth(LocalDate date) {
-        LocalDate monday = date.with(DayOfWeek.MONDAY);
+        LocalDate monday = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         return (monday.getDayOfMonth() - 1) / 7 + 1;
     }
 

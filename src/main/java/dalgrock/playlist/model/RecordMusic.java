@@ -27,4 +27,11 @@ public class RecordMusic extends BaseTimeEntity {
 
     private Long recordId;
     private Long musicId;
+
+    public static RecordMusic of(Record record, Music music) {
+        return RecordMusic.builder()
+                .recordId(record.getId())
+                .musicId(music.getId())
+                .build();
+    }
 }
