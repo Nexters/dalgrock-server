@@ -29,7 +29,9 @@ import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -63,10 +65,13 @@ public class RecordService {
 
     private static final ZoneId APP_ZONE = ZoneId.of("Asia/Seoul");
 
+    private static final int DAYS_PER_WEEK = 7;
+
     /**
      * 이번 주(월요일~일요일)에 해당하는 userId의 records를 조회하여
-     * recordId, createdAt, musics(thumbnail), emotions 형태로 반환.
-     * 주의 시작은 월요일, 끝은 일요일. 기준 시간대는 Asia/Seoul.
+     * recordId, createdAt, musics, emotions, isToday 형태로 반환.
+     * - records는 항상 7개 (월~일 순). 기록 없는 날은 recordId/createdAt null, musics/emotions [], isToday만 해당 날짜 여부.
+     * 기준 시간대는 Asia/Seoul.
      */
     public GetRecordResponse getRecords(Long userId) {
         LocalDate today = ZonedDateTime.now(APP_ZONE).toLocalDate();
@@ -82,13 +87,29 @@ public class RecordService {
                 .map(w -> recordRepository.findByUserIdAndWeeklyIdIn(userId, List.of(w.getId())))
                 .orElse(List.of());
 
-        List<GetRecordResponse.RecordItem> recordItems = records.stream()
-                .filter(r -> isDateInRange(r.getCreatedAt(), weekMonday, weekSunday))
-                .sorted(Comparator.comparing(Record::getCreatedAt).reversed())
-                .map(this::toRecordItem)
-                .toList();
+        Map<LocalDate, Record> recordByDate = new HashMap<>();
+        for (Record r : records) {
+            if (isDateInRange(r.getCreatedAt(), weekMonday, weekSunday)) {
+                LocalDate d = r.getCreatedAt().atZone(APP_ZONE).toLocalDate();
+                recordByDate.put(d, r);
+            }
+        }
+
+        List<GetRecordResponse.RecordItem> recordItems = new ArrayList<>(DAYS_PER_WEEK);
+        for (int i = 0; i < DAYS_PER_WEEK; i++) {
+            LocalDate day = weekMonday.plusDays(i);
+            Record record = recordByDate.get(day);
+            boolean isToday = day.equals(today);
+            recordItems.add(record != null
+                    ? toRecordItem(record, isToday)
+                    : emptyRecordItem(isToday));
+        }
 
         return new GetRecordResponse(recordItems);
+    }
+
+    private static GetRecordResponse.RecordItem emptyRecordItem(boolean isToday) {
+        return new GetRecordResponse.RecordItem(null, null, List.of(), List.of(), isToday);
     }
 
     /** createdAt의 날짜가 [weekMonday, weekSunday] 안에 있는지 검사. 저장이 KST면 atZone(APP_ZONE), UTC면 UTC→Seoul 변환 필요. */
@@ -97,7 +118,7 @@ public class RecordService {
         return !d.isBefore(weekMonday) && !d.isAfter(weekSunday);
     }
 
-    private GetRecordResponse.RecordItem toRecordItem(Record record) {
+    private GetRecordResponse.RecordItem toRecordItem(Record record, boolean isToday) {
         List<GetRecordMusicDto> recordMusics = recordMusicRepository.findAllByRecordId(record.getId());
         List<GetRecordResponse.MusicThumbnailItem> musics = recordMusics.stream()
                 .map(dto -> new GetRecordResponse.MusicThumbnailItem(nullToEmpty(dto.getThumbnail())))
@@ -107,7 +128,8 @@ public class RecordService {
                 record.getId(),
                 record.getCreatedAt(),
                 musics,
-                emotions
+                emotions,
+                isToday
         );
     }
 

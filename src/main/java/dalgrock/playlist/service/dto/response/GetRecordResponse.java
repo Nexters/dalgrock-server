@@ -5,18 +5,19 @@ import java.util.List;
 
 /**
  * GET /v1/records 응답.
- * - records: 이번 주 기록 배열 (recordId, createdAt, musics, emotions)
+ * - records: 항상 7개 (월~일 순, 늦은 날짜가 뒤). 기록 없는 날은 recordId/createdAt null, musics/emotions 빈 배열, isToday만 해당 날짜 여부.
  */
 public record GetRecordResponse(
         List<RecordItem> records
 ) {
 
-    /** 기록 한 건 (recordId, createdAt, musics, emotions) */
+    /** 기록 한 건 또는 빈 슬롯 (기록 없으면 recordId·createdAt null, musics·emotions 빈 배열, isToday로 오늘 여부 표시) */
     public record RecordItem(
             Long recordId,
             LocalDateTime createdAt,
             List<MusicThumbnailItem> musics,
-            List<String> emotions
+            List<String> emotions,
+            boolean isToday
     ) {}
 
     /** 음악 썸네일 (thumbnail) */
