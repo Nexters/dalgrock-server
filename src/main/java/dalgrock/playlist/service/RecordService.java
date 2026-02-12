@@ -18,8 +18,8 @@ import dalgrock.playlist.model.Weekly;
 import dalgrock.playlist.service.dto.command.CreateRecordCommand;
 import dalgrock.playlist.service.dto.command.CreateRecordMusicCommand;
 import dalgrock.playlist.service.dto.response.CreateRecordResponse;
-import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
+import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -138,8 +138,7 @@ public class RecordService {
     }
 
     /**
-     * 주차는 월요일 시작 ~ 일요일 끝.
-     * 오늘 날짜가 속한 주의 월요일 기준으로 (year, month, week) 계산.
+     * 주차는 월요일 시작 ~ 일요일 끝. 오늘 날짜가 속한 주의 월요일 기준으로 (year, month, week) 계산.
      */
     private int getYearOfWeek(LocalDate date) {
         return date.with(DayOfWeek.MONDAY).getYear();
