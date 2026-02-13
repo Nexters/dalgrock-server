@@ -58,3 +58,11 @@ app:
     redirect-uri: https://pliview.kr/auth/kakao/callback
     secure-cookie: false
     samesite-cookie: None
+
+spotify:
+  client-id: ${SPOTIFY_CLIENT_ID}
+  client-secret: ${SPOTIFY_CLIENT_SECRET}
+
+client:
+  connection-timeout: 5
+  read-timeout: 10

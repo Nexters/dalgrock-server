@@ -21,6 +21,7 @@ import dalgrock.playlist.service.dto.response.CreateRecordResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
 import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
 import dalgrock.playlist.service.dto.response.GetRecordResponse;
+import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
