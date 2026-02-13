@@ -7,6 +7,7 @@ import dalgrock.playlist.service.dto.command.CreateRecordCommand;
 import dalgrock.playlist.service.dto.command.CreateRecordMusicCommand;
 import dalgrock.playlist.service.dto.response.CreateRecordResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
+import dalgrock.playlist.service.dto.response.GetRecordResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -67,5 +68,12 @@ public class RecordControllerV1 {
                 request.situations(),
                 request.location()
         );
+    }
+
+    @GetMapping()
+    public GetRecordResponse getRecords(
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return recordService.getRecords(principal.userId());
     }
 }
