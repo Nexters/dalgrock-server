@@ -62,7 +62,7 @@ public class RecordControllerV1 {
         );
     }
 
-    @GetMapping("/")
+    @GetMapping()
     public GetRecordResponse getRecords(
             @AuthenticationPrincipal UserPrincipal principal
     ) {
