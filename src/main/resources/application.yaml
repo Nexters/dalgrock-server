@@ -1,3 +1,6 @@
+server:
+  forward-headers-strategy: framework
+
 spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${POSTGRES_DB}
@@ -63,6 +66,8 @@ jwt:
   expiration: 3600000
 
 app:
+  api:
+    server-url: "https://api-dev.pliview.kr"
   auth:
     host: https://pliview.kr
   cors:

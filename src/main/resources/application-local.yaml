@@ -53,6 +53,8 @@ jwt:
   expiration: 3600000
 
 app:
+  api:
+    server-url: "http://localhost:8080"
   auth:
     host: https://pliview.kr
   cors:
