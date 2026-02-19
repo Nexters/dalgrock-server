@@ -3,11 +3,13 @@ package dalgrock.playlist.config;
 import dalgrock.playlist.core.jwt.JwtAuthenticationFilter;
 import dalgrock.playlist.core.jwt.JwtTokenProvider;
 import dalgrock.playlist.service.CustomOAuth2UserService;
+import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -28,6 +30,9 @@ public class SecurityConfig {
     @Value("${app.auth.host}")
     private String baseUrl;
 
+    @Value("${app.cors.allowed-origins:}")
+    private String corsAllowedOriginsStr;
+
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final OAuth2FailureHandler oAuth2FailureHandler;
@@ -36,7 +41,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(baseUrl));
+        List<String> origins = (corsAllowedOriginsStr != null && !corsAllowedOriginsStr.isBlank())
+                ? Arrays.stream(corsAllowedOriginsStr.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList()
+                : List.of(baseUrl);
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -55,6 +63,7 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(
                         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/", "/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/login-test.html", "/oauth-callback.html", "/test/**").permitAll()

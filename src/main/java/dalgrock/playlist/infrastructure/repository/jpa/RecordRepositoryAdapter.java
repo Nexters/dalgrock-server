@@ -16,7 +16,7 @@ public class RecordRepositoryAdapter implements RecordRepository {
 
     @Override
     public Optional<Record> findById(Long id) {
-        return jpaRecordRepository.findById(id);
+        return jpaRecordRepository.findByIdAndDeletedAtIsNull(id);
     }
 
     @Override
@@ -26,7 +26,7 @@ public class RecordRepositoryAdapter implements RecordRepository {
 
     @Override
     public boolean existsByUserIdAndCreatedAtBetween(Long userId, LocalDateTime start, LocalDateTime end) {
-        return jpaRecordRepository.existsByUserIdAndCreatedAtBetween(userId, start, end);
+        return jpaRecordRepository.existsByUserIdAndCreatedAtBetweenAndDeletedAtIsNull(userId, start, end);
     }
 
     @Override
