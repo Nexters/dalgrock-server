@@ -95,7 +95,7 @@ public class RecordControllerV1 {
         return recordService.getRecords(principal.userId());
     }
 
-    @Operation(summary = "주차별 기록 조회", description = "year, month 기준 해당 달의 주차별 레코드를 조회합니다")
+    @Operation(summary = "월별 기록 조회 (기록 전체보기)", description = "year, month 기준 해당 달의 월별 레코드를 조회합니다")
     @GetMapping("/monthly")
     public GetWeeklyResponse getMonthlyRecords(
             @AuthenticationPrincipal UserPrincipal principal,
