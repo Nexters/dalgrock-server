@@ -11,4 +11,6 @@ public interface RecordMusicRepository {
     RecordMusic save(RecordMusic recordMusic);
 
     List<RecordMusic> saveAll(List<RecordMusic> recordMusics);
+
+    void deleteByRecordId(Long recordId);
 }

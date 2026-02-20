@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Weekly", description = "주차별 기록 조회 API")
+@Tag(name = "Weekly", description = "월별 기록 조회 API")
 @Validated
 @SecurityRequirement(name = "cookieAuth")
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/v1/weekly")
+@RequestMapping("/v1/reports/monthly")
 public class WeeklyControllerV1 {
 
     private final WeeklyService weeklyService;

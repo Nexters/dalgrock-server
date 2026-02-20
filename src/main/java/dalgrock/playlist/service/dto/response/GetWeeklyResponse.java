@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * GET /v1/weekly 응답.
+ * GET /v1/records/monthly 응답.
  * year, month 기준 해당 달의 주차별 레코드 목록.
  */
 public record GetWeeklyResponse(

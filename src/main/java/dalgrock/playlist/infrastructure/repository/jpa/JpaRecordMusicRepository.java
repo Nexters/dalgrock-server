@@ -17,4 +17,6 @@ public interface JpaRecordMusicRepository extends JpaRepository<RecordMusic, Lon
             where rm.record_id = :recordId
             """, nativeQuery = true)
     List<GetRecordMusicDto> findAllByRecordId(@Param("recordId") Long recordId);
+
+    void deleteByRecordId(Long recordId);
 }

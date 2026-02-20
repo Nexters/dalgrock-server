@@ -17,6 +17,7 @@ import dalgrock.playlist.model.Situation;
 import dalgrock.playlist.model.Weekly;
 import dalgrock.playlist.service.dto.command.CreateRecordCommand;
 import dalgrock.playlist.service.dto.command.CreateRecordMusicCommand;
+import dalgrock.playlist.service.dto.command.UpdateRecordCommand;
 import dalgrock.playlist.service.dto.response.CreateRecordResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
 import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
@@ -247,5 +248,74 @@ public class RecordService {
                             .build();
                     return weeklyRepository.save(newWeekly);
                 });
+    }
+
+    @Transactional
+    public GetRecordDetailResponse updateRecord(Long userId, Long recordId, UpdateRecordCommand command) {
+        Record record = recordRepository.findById(recordId)
+                .orElseThrow(() -> new RecordNotFoundException(ErrorCode.RECORD_NOT_FOUND.getMessage()));
+
+        if (!record.getUserId().equals(userId)) {
+            throw new UnauthorizedException(ErrorCode.FORBIDDEN.getMessage());
+        }
+
+        switch (command.type().toLowerCase()) {
+            case "musics" -> updateMusics(record, command.musics());
+            case "emotions" -> updateEmotions(record, command.emotions());
+            case "situations" -> updateSituations(record, command.situations());
+            case "content" -> updateContent(record, command.content());
+            default -> throw new IllegalArgumentException("Invalid update type: " + command.type());
+        }
+
+        Record savedRecord = recordRepository.save(record);
+        List<GetRecordMusicDto> recordMusics = recordMusicRepository.findAllByRecordId(savedRecord.getId());
+        List<GetRecordMusicResponse> recordMusicResponses = recordMusics.stream()
+                .map(GetRecordMusicResponse::from)
+                .toList();
+        return GetRecordDetailResponse.of(savedRecord, recordMusicResponses);
+    }
+
+    private void updateMusics(Record record, List<CreateRecordMusicCommand> musics) {
+        if (musics == null || musics.isEmpty()) {
+            record.updateThumbnail("");
+            recordMusicRepository.deleteByRecordId(record.getId());
+            return;
+        }
+        recordMusicRepository.deleteByRecordId(record.getId());
+        String thumbnail = musics.get(0).thumbnail() != null ? musics.get(0).thumbnail() : "";
+        for (CreateRecordMusicCommand musicCommand : musics) {
+            Music music = findOrCreateMusic(musicCommand);
+            RecordMusic recordMusic = RecordMusic.builder()
+                    .recordId(record.getId())
+                    .musicId(music.getId())
+                    .build();
+            recordMusicRepository.save(recordMusic);
+        }
+        record.updateThumbnail(thumbnail);
+    }
+
+    private void updateEmotions(Record record, List<String> emotions) {
+        record.updateEmotions(toEmotions(emotions != null ? emotions : List.of()));
+    }
+
+    private void updateSituations(Record record, List<String> situations) {
+        record.updateSituations(toSituations(situations != null ? situations : List.of()));
+    }
+
+    private void updateContent(Record record, String content) {
+        record.updateContent(content != null ? content : "");
+    }
+
+    @Transactional
+    public void deleteRecord(Long userId, Long recordId) {
+        Record record = recordRepository.findById(recordId)
+                .orElseThrow(() -> new RecordNotFoundException(ErrorCode.RECORD_NOT_FOUND.getMessage()));
+
+        if (!record.getUserId().equals(userId)) {
+            throw new UnauthorizedException(ErrorCode.FORBIDDEN.getMessage());
+        }
+
+        record.softDelete(LocalDateTime.now());
+        recordRepository.save(record);
     }
 }

@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -60,6 +61,9 @@ public class Record extends BaseTimeEntity {
     @JoinColumn(name = "weekly_id", nullable = false)
     private Weekly weekly;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     public List<String> getEmotionsToString() {
         return this.emotions.stream()
                 .map(Emotion::getValue)
@@ -70,5 +74,27 @@ public class Record extends BaseTimeEntity {
         return this.situations.stream()
                 .map(Situation::getValue)
                 .toList();
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
+
+    public void updateEmotions(List<Emotion> emotions) {
+        this.emotions.clear();
+        this.emotions.addAll(emotions);
+    }
+
+    public void updateSituations(List<Situation> situations) {
+        this.situations.clear();
+        this.situations.addAll(situations);
+    }
+
+    public void updateThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail != null ? thumbnail : "";
+    }
+
+    public void softDelete(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

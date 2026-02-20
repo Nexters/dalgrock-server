@@ -27,4 +27,9 @@ public class RecordMusicRepositoryAdapter implements RecordMusicRepository {
     public List<RecordMusic> saveAll(List<RecordMusic> recordMusics) {
         return jpaRecordMusicRepository.saveAll(recordMusics);
     }
+
+    @Override
+    public void deleteByRecordId(Long recordId) {
+        jpaRecordMusicRepository.deleteByRecordId(recordId);
+    }
 }
