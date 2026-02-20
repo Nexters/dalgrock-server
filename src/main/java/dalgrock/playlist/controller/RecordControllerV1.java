@@ -7,9 +7,11 @@ import dalgrock.playlist.service.RecordService;
 import dalgrock.playlist.service.dto.command.CreateRecordCommand;
 import dalgrock.playlist.service.dto.command.CreateRecordMusicCommand;
 import dalgrock.playlist.service.dto.command.UpdateRecordCommand;
+import dalgrock.playlist.service.WeeklyService;
 import dalgrock.playlist.service.dto.response.CreateRecordResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
 import dalgrock.playlist.service.dto.response.GetRecordResponse;
+import dalgrock.playlist.service.dto.response.GetWeeklyResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -17,6 +19,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,11 +34,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 import tools.jackson.databind.JsonNode;
 
 @Tag(name = "Record", description = "내 기록 관리 API")
+@Validated
 @SecurityRequirement(name = "cookieAuth")
 @RequiredArgsConstructor
 @RestController
@@ -42,6 +49,7 @@ import tools.jackson.databind.JsonNode;
 public class RecordControllerV1 {
 
     private final RecordService recordService;
+    private final WeeklyService weeklyService;
 
     @Operation(summary = "내 기록 상세 조회", description = "내 기록 ID로 기록을 상세 조회합니다")
     @GetMapping("/detail/{recordId}")
@@ -85,6 +93,16 @@ public class RecordControllerV1 {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return recordService.getRecords(principal.userId());
+    }
+
+    @Operation(summary = "주차별 기록 조회", description = "year, month 기준 해당 달의 주차별 레코드를 조회합니다")
+    @GetMapping("/monthly")
+    public GetWeeklyResponse getMonthlyRecords(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam @Min(1900) @Max(2100) int year,
+            @RequestParam @Min(1) @Max(12) int month
+    ) {
+        return weeklyService.getWeeklyRecords(principal.userId(), year, month);
     }
 
     @Operation(
