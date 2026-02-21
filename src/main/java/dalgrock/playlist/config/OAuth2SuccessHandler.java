@@ -105,6 +105,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         if (isLocalEnvironment) {
             cookieBuilder
+                    .domain("localhost")
                     .secure(false)
                     .sameSite("Lax");
         } else {
