@@ -57,31 +57,49 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         redirectToCallback(request, response, accessToken, redirectUrl);
     }
 
+    /**
+     * 요청 Origin 또는 Referer에서 호스트를 추출하여 리다이렉트 URL을 생성합니다.
+     * 동적으로 호스트 + /auth/kakao/callback 경로를 반환합니다.
+     */
     private String determineRedirectUrl(HttpServletRequest request) {
         String origin = request.getHeader("Origin");
         String referer = request.getHeader("Referer");
         logger.info("origin: " + origin);
         logger.info("referer: " + referer);
 
-        if (origin != null && origin.contains(LOCAL_HOST_PATTERN)) {
-            return buildRedirectUrl(LOCAL_HOST);
+        // Origin 헤더 우선 사용
+        if (origin != null && !origin.isBlank()) {
+            return buildRedirectUrl(origin);
         }
 
-        if (referer != null && referer.contains(LOCAL_HOST_PATTERN)) {
-            return buildRedirectUrl(LOCAL_HOST);
+        // Referer 헤더에서 호스트 추출
+        if (referer != null && !referer.isBlank()) {
+            try {
+                java.net.URI uri = new java.net.URI(referer);
+                String host = uri.getScheme() + "://" + uri.getAuthority();
+                logger.info("Referer에서 추출한 호스트: " + host);
+                return buildRedirectUrl(host);
+            } catch (java.net.URISyntaxException e) {
+                logger.warn("Referer 파싱 실패: " + referer, e);
+            }
         }
 
+        // 기본값: 설정된 redirect-uri 사용
+        logger.info("기본 redirect-uri 사용: " + targetUrl);
         return targetUrl;
     }
 
     /**
      * UriComponentsBuilder를 사용하여 안전하게 URL을 생성합니다.
+     * baseUrl + /auth/kakao/callback 경로를 반환합니다.
      */
     private String buildRedirectUrl(String baseUrl) {
-        return UriComponentsBuilder.fromUriString(baseUrl)
+        String redirectUrl = UriComponentsBuilder.fromUriString(baseUrl)
                 .path("/auth/kakao/callback")
                 .build()
                 .toUriString();
+        logger.info("생성된 리다이렉트 URL: " + redirectUrl);
+        return redirectUrl;
     }
 
     private String extractProviderId(OAuth2User oAuth2User) {
