@@ -58,17 +58,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String origin = request.getHeader("Origin");
         String referer = request.getHeader("Referer");
 
-        // Origin 헤더 우선 확인
         if (origin != null && origin.contains(LOCAL_HOST_PATTERN)) {
             return buildRedirectUrl(LOCAL_HOST);
         }
 
-        // Referer 헤더 확인
         if (referer != null && referer.contains(LOCAL_HOST_PATTERN)) {
             return buildRedirectUrl(LOCAL_HOST);
         }
 
-        // 기본값: 설정된 배포 환경 URL 사용
         return targetUrl;
     }
 
