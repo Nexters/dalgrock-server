@@ -7,7 +7,6 @@ import dalgrock.playlist.model.OauthProvider;
 import dalgrock.playlist.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
@@ -64,7 +65,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     ) throws IOException {
         ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
                 .path("/")
-                .httpOnly(true)
+                .httpOnly(false)
                 .secure(secureHttp)
                 .sameSite(sameSite)    // Lax, None
                 .maxAge(3600)
