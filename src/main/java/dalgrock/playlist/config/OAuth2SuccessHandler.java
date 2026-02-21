@@ -103,15 +103,17 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("access_token", accessToken)
                 .path("/")
-                .httpOnly(true)
+                .httpOnly(false)
                 .secure(true)
                 .maxAge(3600);
 
         if (isLocalEnvironment) {
             cookieBuilder
+                    .sameSite("None")
                     .domain("localhost");
         } else {
             cookieBuilder
+                    .secure(secureHttp)
                     .sameSite(sameSite);
         }
 
