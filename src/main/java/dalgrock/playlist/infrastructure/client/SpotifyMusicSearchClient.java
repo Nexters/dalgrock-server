@@ -1,14 +1,20 @@
 package dalgrock.playlist.infrastructure.client;
 
-import dalgrock.playlist.infrastructure.spotify.dto.MusicCommand;
 import dalgrock.playlist.infrastructure.spotify.SpotifyAuthService;
+import dalgrock.playlist.infrastructure.spotify.dto.MusicCommand;
+import dalgrock.playlist.infrastructure.spotify.dto.SpotifyArtistResponse;
 import dalgrock.playlist.infrastructure.spotify.dto.SpotifySearchResponse;
 import dalgrock.playlist.infrastructure.spotify.dto.SpotifySearchResponse.ItemResponse;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -17,6 +23,7 @@ public class SpotifyMusicSearchClient implements MusicSearchClient {
 
     private static final String SPOTIFY_API_HOST = "api.spotify.com";
     private static final String SEARCH_PATH = "/v1/search";
+    private static final String ARTISTS_PATH = "/v1/artists";
     private static final int SEARCH_LIMIT = 20;
 
     private final RestClient spotifyRestClient;
@@ -45,8 +52,11 @@ public class SpotifyMusicSearchClient implements MusicSearchClient {
                 return List.of();
             }
 
-            log.info("Spotify API 검색 완료: {}개 결과", response.tracks().items().size());
-            return mapToDomainModels(response.tracks().items());
+            List<ItemResponse> items = response.tracks().items();
+            log.info("Spotify API 검색 완료: {}개 결과", items.size());
+
+            Map<String, String> artistGenreMap = fetchArtistGenres(items, accessToken);
+            return mapToDomainModels(items, artistGenreMap);
         } catch (Exception e) {
             log.error("Spotify API 검색 실패", e);
             return List.of();
@@ -58,13 +68,59 @@ public class SpotifyMusicSearchClient implements MusicSearchClient {
         return "Spotify";
     }
 
-    private List<MusicCommand> mapToDomainModels(List<ItemResponse> items) {
+    private Map<String, String> fetchArtistGenres(List<ItemResponse> items, String accessToken) {
+        List<String> artistIds = items.stream()
+                .filter(item -> item.artists() != null && !item.artists().isEmpty())
+                .map(item -> item.artists().getFirst().id())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (artistIds.isEmpty()) {
+            return Map.of();
+        }
+
+        String ids = String.join(",", artistIds);
+
+        try {
+            SpotifyArtistResponse artistResponse = spotifyRestClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .scheme("https")
+                            .host(SPOTIFY_API_HOST)
+                            .path(ARTISTS_PATH)
+                            .queryParam("ids", ids)
+                            .build())
+                    .header("Authorization", "Bearer " + accessToken)
+                    .retrieve()
+                    .body(SpotifyArtistResponse.class);
+
+            if (artistResponse == null || artistResponse.artists() == null) {
+                return Map.of();
+            }
+
+            return artistResponse.artists().stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(
+                            SpotifyArtistResponse.ArtistDetail::id,
+                            artist -> Optional.ofNullable(artist.genres())
+                                    .filter(g -> !g.isEmpty())
+                                    .map(List::getFirst)
+                                    .orElse(null),
+                            (existing, replacement) -> existing
+                    ));
+        } catch (Exception e) {
+            log.warn("Spotify Artists API 호출 실패", e);
+            return Map.of();
+        }
+    }
+
+    private List<MusicCommand> mapToDomainModels(List<ItemResponse> items, Map<String, String> artistGenreMap) {
         return items.stream()
-                .map(this::mapToDomainModel)
+                .map(item -> mapToDomainModel(item, artistGenreMap))
                 .toList();
     }
 
-    private MusicCommand mapToDomainModel(ItemResponse item) {
+    private MusicCommand mapToDomainModel(ItemResponse item, Map<String, String> artistGenreMap) {
         String artistName = item.artists() != null && !item.artists().isEmpty()
                 ? item.artists().getFirst().name()
                 : "Unknown Artist";
@@ -79,12 +135,18 @@ public class SpotifyMusicSearchClient implements MusicSearchClient {
                 ? item.externalUrls().spotify()
                 : null;
 
+        String genre = Optional.ofNullable(item.artists())
+                .filter(a -> !a.isEmpty())
+                .map(a -> artistGenreMap.get(a.getFirst().id()))
+                .orElse(null);
+
         return new MusicCommand(
                 item.id(),
                 item.name(),
                 artistName,
                 thumbnail,
-                spotifyUrl
+                spotifyUrl,
+                genre
         );
     }
 }
