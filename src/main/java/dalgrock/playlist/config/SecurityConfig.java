@@ -41,15 +41,29 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        List<String> origins = (corsAllowedOriginsStr != null && !corsAllowedOriginsStr.isBlank())
-                ? Arrays.stream(corsAllowedOriginsStr.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList()
-                : List.of(baseUrl);
-        config.setAllowedOrigins(origins);
+
+        List<String> origins;
+        if (corsAllowedOriginsStr != null && !corsAllowedOriginsStr.isBlank()) {
+            origins = Arrays.stream(corsAllowedOriginsStr.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
+        } else {
+            origins = List.of(baseUrl);
+        }
+
+        List<String> finalOrigins = new java.util.ArrayList<>(origins);
+        if (!finalOrigins.contains("http://localhost:5173")) {
+            finalOrigins.add("http://localhost:5173");
+        }
+
+        config.setAllowedOrigins(finalOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         config.setExposedHeaders(List.of("Authorization"));
         config.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
