@@ -2,7 +2,6 @@ package dalgrock.playlist.scheduler;
 
 import dalgrock.playlist.infrastructure.repository.UserRepository;
 import dalgrock.playlist.model.User;
-import dalgrock.playlist.service.WeeklyReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,7 +20,7 @@ import java.util.List;
 public class WeeklyReportScheduler {
 
     private final UserRepository userRepository;
-    private final WeeklyReportService weeklyReportService;
+//    private final WeeklyReportService weeklyReportService;
 
     @Scheduled(cron = "0 0 18 * * SUN", zone = "Asia/Seoul")
     public void generateWeeklyReports() {
