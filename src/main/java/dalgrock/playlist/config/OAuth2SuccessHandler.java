@@ -119,6 +119,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         ResponseCookie cookie = cookieBuilder.build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        logger.info("HttpHeaders.SET_COOKIE: " + HttpHeaders.SET_COOKIE);
+        logger.info("isLocalEnvironment: " + isLocalEnvironment);
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 }
