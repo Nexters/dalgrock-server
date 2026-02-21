@@ -15,12 +15,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    private static final String LOCAL_HOST = "http://localhost:5173";
+    private static final String LOCAL_HOST_PATTERN = "localhost:5173";
 
     @Value("${app.auth.redirect-uri}")
     private String targetUrl;
@@ -46,7 +50,36 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         User user = findUser(providerId);
         String accessToken = tokenProvider.createAccessToken(user.getId(), user.getRole().name());
 
-        redirectToCallback(request, response, accessToken);
+        String redirectUrl = determineRedirectUrl(request);
+        redirectToCallback(request, response, accessToken, redirectUrl);
+    }
+
+    private String determineRedirectUrl(HttpServletRequest request) {
+        String origin = request.getHeader("Origin");
+        String referer = request.getHeader("Referer");
+
+        // Origin 헤더 우선 확인
+        if (origin != null && origin.contains(LOCAL_HOST_PATTERN)) {
+            return buildRedirectUrl(LOCAL_HOST);
+        }
+
+        // Referer 헤더 확인
+        if (referer != null && referer.contains(LOCAL_HOST_PATTERN)) {
+            return buildRedirectUrl(LOCAL_HOST);
+        }
+
+        // 기본값: 설정된 배포 환경 URL 사용
+        return targetUrl;
+    }
+
+    /**
+     * UriComponentsBuilder를 사용하여 안전하게 URL을 생성합니다.
+     */
+    private String buildRedirectUrl(String baseUrl) {
+        return UriComponentsBuilder.fromUriString(baseUrl)
+                .path("/oauth-callback")
+                .build()
+                .toUriString();
     }
 
     private String extractProviderId(OAuth2User oAuth2User) {
@@ -61,17 +94,28 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private void redirectToCallback(
             HttpServletRequest request,
             HttpServletResponse response,
-            String accessToken
+            String accessToken,
+            String redirectUrl
     ) throws IOException {
-        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
-                .path("/")
-                .httpOnly(false)
-                .secure(secureHttp)
-                .sameSite(sameSite)    // Lax, None
-                .maxAge(3600)
-                .build();
+        boolean isLocalEnvironment = redirectUrl.contains(LOCAL_HOST_PATTERN);
 
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("access_token", accessToken)
+                .path("/")
+                .httpOnly(true)
+                .maxAge(3600);
+
+        if (isLocalEnvironment) {
+            cookieBuilder
+                    .secure(false)
+                    .sameSite("Lax");
+        } else {
+            cookieBuilder
+                    .secure(secureHttp)
+                    .sameSite(sameSite);
+        }
+
+        ResponseCookie cookie = cookieBuilder.build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        getRedirectStrategy().sendRedirect(request, response, targetUrl);
+        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 }
