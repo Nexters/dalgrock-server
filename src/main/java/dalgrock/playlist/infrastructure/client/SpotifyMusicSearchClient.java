@@ -100,12 +100,11 @@ public class SpotifyMusicSearchClient implements MusicSearchClient {
 
             return artistResponse.artists().stream()
                     .filter(Objects::nonNull)
+                    .filter(artist -> artist.id() != null)
+                    .filter(artist -> artist.genres() != null && !artist.genres().isEmpty())
                     .collect(Collectors.toMap(
                             SpotifyArtistResponse.ArtistDetail::id,
-                            artist -> Optional.ofNullable(artist.genres())
-                                    .filter(g -> !g.isEmpty())
-                                    .map(List::getFirst)
-                                    .orElse(null),
+                            artist -> artist.genres().getFirst(),
                             (existing, replacement) -> existing
                     ));
         } catch (Exception e) {

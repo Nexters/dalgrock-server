@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     defer-datasource-initialization: true # 중요! JPA 테이블 생성 후 data.sql 실행
     show-sql: true
     properties:
