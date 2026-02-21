@@ -70,7 +70,7 @@ app:
     server-url: "https://api-dev.pliview.kr"
   auth:
     host: https://pliview.kr
-    redirect-uri: http://localhost:5173/auth/kakao/callback
+    redirect-uri: https://pliview.kr/auth/kakao/callback
     secure-cookie: false
     samesite-cookie: Lax
   cors:
