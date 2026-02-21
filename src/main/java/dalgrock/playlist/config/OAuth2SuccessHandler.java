@@ -79,7 +79,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
      */
     private String buildRedirectUrl(String baseUrl) {
         return UriComponentsBuilder.fromUriString(baseUrl)
-                .path("/")
+                .path("/auth/kakao/callback")
                 .build()
                 .toUriString();
     }
