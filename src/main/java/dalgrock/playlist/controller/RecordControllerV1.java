@@ -76,7 +76,8 @@ public class RecordControllerV1 {
                 .map(m -> new CreateRecordMusicCommand(
                         m.title(),
                         m.artist(),
-                        m.thumbnail()
+                        m.thumbnail(),
+                        m.genre()
                 ))
                 .collect(Collectors.toList());
         return new CreateRecordCommand(
@@ -116,7 +117,7 @@ public class RecordControllerV1 {
                     | content | string | `"오늘의 기록 내용"` |
                     | emotions | string[] | `["행복", "설렘"]` |
                     | situations | string[] | `["출퇴근", "카페"]` |
-                    | musics | object[] | `[{ "title": "곡명", "artist": "아티스트", "thumbnail": "https://..." }]` |
+                    | musics | object[] | `[{ "title": "곡명", "artist": "아티스트", "thumbnail": "https://...", "genre": "팝" }]` |
                     
                     musics 수정 시: Music 테이블에 없으면 추가하고, record 썸네일은 첫 곡 썸네일로 갱신됩니다.
                     """,
@@ -128,7 +129,7 @@ public class RecordControllerV1 {
                                     @ExampleObject(name = "content 수정", value = "{\"type\":\"content\",\"data\":\"오늘의 기록 내용입니다.\"}"),
                                     @ExampleObject(name = "emotions 수정", value = "{\"type\":\"emotions\",\"data\":[\"행복\",\"설렘\",\"평온\"]}"),
                                     @ExampleObject(name = "situations 수정", value = "{\"type\":\"situations\",\"data\":[\"출퇴근\",\"카페\"]}"),
-                                    @ExampleObject(name = "musics 수정", value = "{\"type\":\"musics\",\"data\":[{\"title\":\"곡제목\",\"artist\":\"아티스트명\",\"thumbnail\":\"https://example.com/thumb.png\"}]}")
+                                    @ExampleObject(name = "musics 수정", value = "{\"type\":\"musics\",\"data\":[{\"title\":\"곡제목\",\"artist\":\"아티스트명\",\"thumbnail\":\"https://example.com/thumb.png\",\"genre\":\"팝\"}]}"),
                             }
                     )
             )
@@ -198,7 +199,8 @@ public class RecordControllerV1 {
             result.add(new CreateRecordMusicCommand(
                     node.has("title") ? node.get("title").asText() : "",
                     node.has("artist") ? node.get("artist").asText() : "",
-                    node.has("thumbnail") ? node.get("thumbnail").asText(null) : null
+                    node.has("thumbnail") ? node.get("thumbnail").asText(null) : null,
+                    node.has("genre") ? node.get("genre").asText(null) : null
             ));
         });
         return result;
