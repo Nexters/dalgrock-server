@@ -119,6 +119,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         ResponseCookie cookie = cookieBuilder.build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        logger.info("cookie"+cookie);
         long maxAgeSeconds = cookie.getMaxAge() != null ? cookie.getMaxAge().toSeconds() : -1;
         logger.info("Set-Cookie 추가됨: name=" + cookie.getName() + ", path=" + cookie.getPath()
                 + ", maxAge=" + maxAgeSeconds + "s, redirectUrl=" + redirectUrl + ", isLocal=" + isLocalEnvironment);
