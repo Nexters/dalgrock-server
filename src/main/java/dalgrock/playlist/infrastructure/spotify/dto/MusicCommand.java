@@ -7,7 +7,8 @@ public record MusicCommand(
         String title,
         String artist,
         String thumbnail,
-        String spotifyUrl
+        String spotifyUrl,
+        String genre
 ) {
 
     public static MusicCommand from(Music music) {
@@ -16,7 +17,8 @@ public record MusicCommand(
                 music.getTitle(),
                 music.getArtist(),
                 music.getThumbnail(),
-                null
+                null,
+                music.getGenre()
         );
     }
 }

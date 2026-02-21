@@ -8,7 +8,8 @@ public record MusicSearchResponse(
         String title,
         String artist,
         String thumbnail,
-        String spotifyUrl
+        String spotifyUrl,
+        String genre
 ) {
 
     public static MusicSearchResponse from(Music music) {
@@ -17,7 +18,8 @@ public record MusicSearchResponse(
                 music.getTitle(),
                 music.getArtist(),
                 music.getThumbnail(),
-                null
+                null,
+                music.getGenre()
         );
     }
 
@@ -27,7 +29,8 @@ public record MusicSearchResponse(
                 command.title(),
                 command.artist(),
                 command.thumbnail(),
-                command.spotifyUrl()
+                command.spotifyUrl(),
+                command.genre()
         );
     }
 }

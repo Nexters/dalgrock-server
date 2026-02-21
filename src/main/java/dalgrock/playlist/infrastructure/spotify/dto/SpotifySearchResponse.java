@@ -29,6 +29,7 @@ public record SpotifySearchResponse(
     }
 
     public record AlbumResponse(
+            String id,
             String name,
             List<ImageResponse> images
     ) {

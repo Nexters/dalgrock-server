@@ -4,12 +4,13 @@ import dalgrock.playlist.infrastructure.client.MusicSearchClient;
 import dalgrock.playlist.infrastructure.repository.MusicRepository;
 import dalgrock.playlist.infrastructure.spotify.dto.MusicCommand;
 import dalgrock.playlist.service.dto.response.MusicSearchResponse;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -34,7 +35,7 @@ public class MusicSearchService {
                     .toList();
         }
 
-        log.info("DB_MISS: 외부 API 호출 - 제공자={}", musicSearchClient.getProviderName());
+        log.info("DB_MISS: 외부 API 호출 - 호출={}", musicSearchClient.getProviderName());
         List<MusicCommand> externalResults = musicSearchClient.search(normalizedKeyword);
 
         log.info("{}에서 {}개 결과 반환", musicSearchClient.getProviderName(), externalResults.size());
