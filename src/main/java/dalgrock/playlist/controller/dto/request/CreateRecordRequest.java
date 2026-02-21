@@ -27,7 +27,9 @@ public record CreateRecordRequest(
             @NotNull
             String artist,
 
-            String thumbnail
+            String thumbnail,
+
+            String genre
     ) {
     }
 }

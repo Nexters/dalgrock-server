@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     defer-datasource-initialization: true # 중요! JPA 테이블 생성 후 data.sql 실행
     show-sql: true
     properties:
@@ -69,12 +69,12 @@ app:
   api:
     server-url: "https://api-dev.pliview.kr"
   auth:
-    host: https://pliview.kr
-    redirect-uri: https://pliview.kr/auth/kakao/callback
+    host: https://localhost:5173
+    redirect-uri: https://localhost:5173/auth/kakao/callback
     secure-cookie: false
     samesite-cookie: Lax
   cors:
-    allowed-origins: "https://pliview.kr,https://api-dev.pliview.kr,http://api-dev.pliview.kr,http://localhost:8080,http://localhost:3000,http://localhost:5173,http://127.0.0.1:8080"
+    allowed-origins: "https://pliview.kr,https://api-dev.pliview.kr,http://api-dev.pliview.kr,http://localhost:8080,http://localhost:3000,http://localhost:5173,https://localhost:5173,http://127.0.0.1:8080,https://dev.pliview.kr:5173"
 
 logging:
   level:
