@@ -57,6 +57,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private String determineRedirectUrl(HttpServletRequest request) {
         String origin = request.getHeader("Origin");
         String referer = request.getHeader("Referer");
+        logger.info("origin: " + origin);
+        logger.info("referer: " + referer);
 
         if (origin != null && origin.contains(LOCAL_HOST_PATTERN)) {
             return buildRedirectUrl(LOCAL_HOST);
