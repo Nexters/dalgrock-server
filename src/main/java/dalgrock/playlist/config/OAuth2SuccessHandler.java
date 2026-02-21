@@ -50,6 +50,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         User user = findUser(providerId);
         String accessToken = tokenProvider.createAccessToken(user.getId(), user.getRole().name());
 
+        logger.info("user: " + user);
+        logger.info("accessToken: " + accessToken);
+
         String redirectUrl = determineRedirectUrl(request);
         redirectToCallback(request, response, accessToken, redirectUrl);
     }
