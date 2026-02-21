@@ -23,7 +23,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private static final String LOCAL_HOST = "http://localhost:5173";
+    private static final String LOCAL_HOST = "https://localhost:5173";
     private static final String LOCAL_HOST_PATTERN = "localhost:5173";
 
     @Value("${app.auth.redirect-uri}")
@@ -104,15 +104,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("access_token", accessToken)
                 .path("/")
                 .httpOnly(true)
+                .secure(true)
                 .maxAge(3600);
 
         if (isLocalEnvironment) {
             cookieBuilder
-                    .secure(false)
-                    .sameSite("Lax");
+                    .domain("localhost");
         } else {
             cookieBuilder
-                    .secure(secureHttp)
                     .sameSite(sameSite);
         }
 
