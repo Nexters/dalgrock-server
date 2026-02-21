@@ -49,10 +49,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         User user = findUser(providerId);
         String accessToken = tokenProvider.createAccessToken(user.getId(), user.getRole().name());
 
-        // Origin 또는 Referer 헤더를 확인하여 동적으로 리다이렉트 URL 결정
-        String redirectUrl = determineRedirectUrl(request);
-
-        redirectToCallback(request, response, accessToken, redirectUrl);
+        redirectToCallback(request, response, accessToken);
     }
 
     private String extractProviderId(OAuth2User oAuth2User) {
@@ -65,49 +62,32 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     }
 
     /**
-     * 요청의 Origin 또는 Referer 헤더를 분석하여 리다이렉트 URL을 결정합니다.
-     * localhost:5173이 포함되어 있으면 로컬 개발 환경으로 리다이렉트하고,
-     * 그 외의 경우에는 설정된 배포 환경 URL을 사용합니다.
+     * 요청의 Origin 또는 Referer 헤더를 확인하여 로컬 환경 여부를 판단합니다.
      */
-    private String determineRedirectUrl(HttpServletRequest request) {
+    private boolean isLocalRequest(HttpServletRequest request) {
         String origin = request.getHeader("Origin");
         String referer = request.getHeader("Referer");
 
         // Origin 헤더 우선 확인
         if (origin != null && origin.contains(LOCAL_HOST_PATTERN)) {
-            return buildRedirectUrl(LOCAL_HOST);
+            return true;
         }
 
         // Referer 헤더 확인
-        if (referer != null && referer.contains(LOCAL_HOST_PATTERN)) {
-            return buildRedirectUrl(LOCAL_HOST);
-        }
-
-        // 기본값: 설정된 배포 환경 URL 사용
-        return targetUrl;
-    }
-
-    /**
-     * UriComponentsBuilder를 사용하여 안전하게 URL을 생성합니다.
-     */
-    private String buildRedirectUrl(String baseUrl) {
-        return UriComponentsBuilder.fromUriString(baseUrl)
-                .path("/oauth-callback")
-                .build()
-                .toUriString();
+        return referer != null && referer.contains(LOCAL_HOST_PATTERN);
     }
 
     /**
      * 쿠키를 설정하고 리다이렉트합니다.
-     * 로컬 환경(http)과 배포 환경(https)에 따라 쿠키 설정을 동적으로 조정합니다.
+     * 요청 Origin이 localhost인 경우 쿠키 설정을 로컬 환경에 맞게 조정합니다.
+     * 리다이렉트 URL은 항상 설정된 redirect-uri를 사용합니다.
      */
     private void redirectToCallback(
             HttpServletRequest request,
             HttpServletResponse response,
-            String accessToken,
-            String redirectUrl
+            String accessToken
     ) throws IOException {
-        boolean isLocalEnvironment = redirectUrl.contains(LOCAL_HOST_PATTERN);
+        boolean isLocalEnvironment = isLocalRequest(request);
 
         ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("access_token", accessToken)
                 .path("/")
@@ -128,6 +108,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         ResponseCookie cookie = cookieBuilder.build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+        getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
