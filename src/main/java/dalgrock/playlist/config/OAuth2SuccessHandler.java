@@ -76,7 +76,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
      */
     private String buildRedirectUrl(String baseUrl) {
         return UriComponentsBuilder.fromUriString(baseUrl)
-                .path("/oauth-callback")
+                .path("/")
                 .build()
                 .toUriString();
     }
