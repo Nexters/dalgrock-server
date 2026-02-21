@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
@@ -46,7 +47,44 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         User user = findUser(providerId);
         String accessToken = tokenProvider.createAccessToken(user.getId(), user.getRole().name());
 
-        redirectToCallback(request, response, accessToken);
+        logger.info("user: " + user);
+        logger.info("accessToken: " + accessToken);
+
+        String redirectUrl = determineRedirectUrl(request);
+        redirectToCallback(request, response, accessToken, redirectUrl);
+    }
+
+    private String determineRedirectUrl(HttpServletRequest request) {
+        String origin = request.getHeader("Origin");
+        String referer = request.getHeader("Referer");
+        logger.info("origin: " + origin);
+        logger.info("referer: " + referer);
+
+        if (origin != null && !origin.isBlank()) {
+            return buildRedirectUrl(origin);
+        }
+
+        if (referer != null && !referer.isBlank()) {
+            try {
+                java.net.URI uri = new java.net.URI(referer);
+                String host = uri.getScheme() + "://" + uri.getAuthority();
+                logger.info("Referer에서 추출한 호스트: " + host);
+                return buildRedirectUrl(host);
+            } catch (java.net.URISyntaxException e) {
+                logger.warn("Referer 파싱 실패: " + referer, e);
+            }
+        }
+        logger.info("기본 redirect-uri 사용: " + targetUrl);
+        return targetUrl;
+    }
+
+    private String buildRedirectUrl(String baseUrl) {
+        String redirectUrl = UriComponentsBuilder.fromUriString(baseUrl)
+                .path("/auth/kakao/callback")
+                .build()
+                .toUriString();
+        logger.info("생성된 리다이렉트 URL: " + redirectUrl);
+        return redirectUrl;
     }
 
     private String extractProviderId(OAuth2User oAuth2User) {
@@ -61,17 +99,65 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private void redirectToCallback(
             HttpServletRequest request,
             HttpServletResponse response,
-            String accessToken
+            String accessToken,
+            String redirectUrl
     ) throws IOException {
-        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
+        CookieConfig cookieConfig = extractCookieConfig(redirectUrl);
+
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("access_token", accessToken)
                 .path("/")
                 .httpOnly(false)
-                .secure(secureHttp)
-                .sameSite(sameSite)    // Lax, None
                 .maxAge(3600)
-                .build();
+                .secure(cookieConfig.secure());
 
+        if (cookieConfig.domain() != null) {
+            cookieBuilder.domain(cookieConfig.domain());
+        }
+
+        if (cookieConfig.sameSite() != null) {
+            cookieBuilder.sameSite(cookieConfig.sameSite());
+        }
+
+        ResponseCookie cookie = cookieBuilder.build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        getRedirectStrategy().sendRedirect(request, response, targetUrl);
+
+        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+    }
+
+    private CookieConfig extractCookieConfig(String redirectUrl) {
+        try {
+            java.net.URI uri = new java.net.URI(redirectUrl);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            boolean isHttps = "https".equalsIgnoreCase(scheme);
+
+            boolean secure = isHttps;
+
+            String domain = null;
+            if ("localhost".equalsIgnoreCase(host)) {
+                domain = "localhost";
+            }
+
+            String sameSiteValue;
+            if (!isHttps) {
+                sameSiteValue = null;
+            } else {
+                sameSiteValue = sameSite;
+            }
+            return new CookieConfig(scheme, host, domain, secure, sameSiteValue);
+
+        } catch (java.net.URISyntaxException e) {
+            logger.warn("redirectUrl 파싱 실패, 기본값 사용: " + redirectUrl, e);
+            return new CookieConfig("https", null, null, secureHttp, sameSite);
+        }
+    }
+
+    private record CookieConfig(
+            String scheme,
+            String host,
+            String domain,
+            boolean secure,
+            String sameSite
+    ) {
     }
 }
