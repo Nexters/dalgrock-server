@@ -105,12 +105,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .path("/")
                 .httpOnly(false)
                 .secure(true)
-                .maxAge(3600);
+                .maxAge(3600)
+                .domain(".pliview.kr");
 
         if (isLocalEnvironment) {
             cookieBuilder
-                    .sameSite("None")
-                    .domain("localhost");
+                    .sameSite("None");
         } else {
             cookieBuilder
                     .secure(secureHttp)
