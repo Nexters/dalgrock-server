@@ -215,7 +215,7 @@ public class RecordService {
                             .artist(artist)
                             .title(title)
                             .thumbnail(command.thumbnail() != null ? command.thumbnail() : "")
-                            .genre(null)
+                            .genre(command.genre() != null ? command.genre() : "")
                             .build();
                     return musicRepository.save(newMusic);
                 });

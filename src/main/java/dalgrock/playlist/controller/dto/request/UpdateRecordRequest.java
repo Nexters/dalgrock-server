@@ -28,7 +28,7 @@ public record UpdateRecordRequest(
                         - **content**: string (기록 본문)
                         - **emotions**: string[] (감정 목록)
                         - **situations**: string[] (상황 목록)
-                        - **musics**: object[] (음악 목록, 각 항목: { title, artist, thumbnail })
+                        - **musics**: object[] (음악 목록, 각 항목: { title, artist, thumbnail, genre })
                         """,
                 requiredMode = Schema.RequiredMode.REQUIRED,
                 example = "오늘의 기록 내용"
