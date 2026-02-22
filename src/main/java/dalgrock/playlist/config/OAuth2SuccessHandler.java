@@ -60,11 +60,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         logger.info("origin: " + origin);
         logger.info("referer: " + referer);
 
-        if (origin != null && !origin.isBlank()) {
+        if (origin != null && !origin.isBlank() && !origin.contains("kakao.com")) {
             return buildRedirectUrl(origin);
         }
 
-        if (referer != null && !referer.isBlank()) {
+        if (referer != null && !referer.isBlank() && !referer.contains("kauth.kakao.com")) {
             try {
                 java.net.URI uri = new java.net.URI(referer);
                 String host = uri.getScheme() + "://" + uri.getAuthority();
@@ -74,7 +74,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 logger.warn("Referer 파싱 실패: " + referer, e);
             }
         }
-        logger.info("기본 redirect-uri 사용: " + targetUrl);
+
         return targetUrl;
     }
 
