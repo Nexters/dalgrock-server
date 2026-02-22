@@ -10,10 +10,12 @@ import dalgrock.playlist.infrastructure.repository.RecordRepository;
 import dalgrock.playlist.infrastructure.repository.WeeklyRepository;
 import dalgrock.playlist.infrastructure.repository.dto.GetRecordMusicDto;
 import dalgrock.playlist.model.Emotion;
+import dalgrock.playlist.model.EmotionValue;
 import dalgrock.playlist.model.Music;
 import dalgrock.playlist.model.Record;
 import dalgrock.playlist.model.RecordMusic;
 import dalgrock.playlist.model.Situation;
+import dalgrock.playlist.model.SituationValue;
 import dalgrock.playlist.model.Weekly;
 import dalgrock.playlist.service.dto.command.CreateRecordCommand;
 import dalgrock.playlist.service.dto.command.CreateRecordMusicCommand;
@@ -22,7 +24,10 @@ import dalgrock.playlist.service.dto.response.CreateRecordResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
 import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
 import dalgrock.playlist.service.dto.response.GetRecordResponse;
-import dalgrock.playlist.service.dto.response.GetRecordMusicResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,14 +35,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -193,7 +194,7 @@ public class RecordService {
             return List.of();
         }
         return values.stream()
-                .map(value -> new Emotion("", value))
+                .map(value -> Emotion.from(EmotionValue.fromString(value)))
                 .toList();
     }
 
@@ -202,7 +203,7 @@ public class RecordService {
             return List.of();
         }
         return values.stream()
-                .map(value -> new Situation("", value))
+                .map(value -> Situation.from(SituationValue.fromString(value)))
                 .toList();
     }
 
