@@ -193,7 +193,7 @@ public class RecordService {
             return List.of();
         }
         return values.stream()
-                .map(value -> new Emotion("", value))
+                .map(value -> Emotion.from(EmotionValue.fromString(value)))
                 .toList();
     }
 

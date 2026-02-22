@@ -66,7 +66,7 @@ public class Record extends BaseTimeEntity {
 
     public List<String> getEmotionsToString() {
         return this.emotions.stream()
-                .map(Emotion::getValue)
+                .map(Emotion::getDisplayValue)
                 .toList();
     }
 
