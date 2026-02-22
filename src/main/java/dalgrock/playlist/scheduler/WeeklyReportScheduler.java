@@ -11,7 +11,6 @@ import java.util.List;
 
 /**
  * 주간 리포트 자동 생성 스케줄러
- * <p>
  * 매주 일요일 18:00에 실행되어 모든 사용자의 주간 리포트를 생성합니다.
  */
 @Slf4j
@@ -20,7 +19,6 @@ import java.util.List;
 public class WeeklyReportScheduler {
 
     private final UserRepository userRepository;
-//    private final WeeklyReportService weeklyReportService;
 
     @Scheduled(cron = "0 0 18 * * SUN", zone = "Asia/Seoul")
     public void generateWeeklyReports() {
@@ -48,7 +46,7 @@ public class WeeklyReportScheduler {
 
     private void processUserReport(User user) {
         try {
-            // weeklyReportService.generateWeeklyReport(user.getId());
+            // todo: 주간 분석 작업
         } catch (Exception e) {
             log.error("분석 실패, 사용자ID: {}", user.getId(), e);
             throw e;
