@@ -7,4 +7,6 @@ public interface GetRecordMusicDto {
     String getArtist();
 
     String getThumbnail();
+
+    String getGenre();
 }
