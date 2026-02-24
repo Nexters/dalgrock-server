@@ -28,9 +28,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Value("${app.auth.samesite-cookie}")
     private String sameSite;
 
-    @Value("${app.auth.secure-cookie}")
-    private Boolean secureHttp;
-
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
 
@@ -97,7 +94,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .path("/")
                 .httpOnly(false)
                 .maxAge(3600)
-                .secure(cookieConfig.secure());
+                .secure(true);
 
         if (cookieConfig.domain() != null) {
             cookieBuilder.domain(cookieConfig.domain());
@@ -116,37 +113,21 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private CookieConfig extractCookieConfig(String redirectUrl) {
         try {
             java.net.URI uri = new java.net.URI(redirectUrl);
-            String scheme = uri.getScheme();
             String host = uri.getHost();
-            boolean isHttps = "https".equalsIgnoreCase(scheme);
-
-            boolean secure = isHttps;
 
             String domain = null;
             if ("localhost".equalsIgnoreCase(host)) {
                 domain = "localhost";
             }
 
-            String sameSiteValue;
-            if (!isHttps) {
-                sameSiteValue = null;
-            } else {
-                sameSiteValue = sameSite;
-            }
-            return new CookieConfig(scheme, host, domain, secure, sameSiteValue);
+            return new CookieConfig(domain, sameSite);
 
         } catch (java.net.URISyntaxException e) {
             logger.warn("redirectUrl 파싱 실패, 기본값 사용: " + redirectUrl, e);
-            return new CookieConfig("https", null, null, secureHttp, sameSite);
+            return new CookieConfig(null, sameSite);
         }
     }
 
-    private record CookieConfig(
-            String scheme,
-            String host,
-            String domain,
-            boolean secure,
-            String sameSite
-    ) {
+    private record CookieConfig(String domain, String sameSite) {
     }
 }
