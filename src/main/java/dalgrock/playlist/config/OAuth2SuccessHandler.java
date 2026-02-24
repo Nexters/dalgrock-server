@@ -17,14 +17,13 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-
-    @Value("${app.auth.redirect-uri}")
-    private String targetUrl;
 
     @Value("${app.auth.samesite-cookie}")
     private String sameSite;
@@ -55,27 +54,17 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     }
 
     private String determineRedirectUrl(HttpServletRequest request) {
-        String origin = request.getHeader("Origin");
-        String referer = request.getHeader("Referer");
-        logger.info("origin: " + origin);
-        logger.info("referer: " + referer);
-
-        if (origin != null && !origin.isBlank() && !origin.contains("kakao.com")) {
-            return buildRedirectUrl(origin);
-        }
-
-        if (referer != null && !referer.isBlank() && !referer.contains("kauth.kakao.com")) {
-            try {
-                java.net.URI uri = new java.net.URI(referer);
-                String host = uri.getScheme() + "://" + uri.getAuthority();
-                logger.info("Referer에서 추출한 호스트: " + host);
-                return buildRedirectUrl(host);
-            } catch (java.net.URISyntaxException e) {
-                logger.warn("Referer 파싱 실패: " + referer, e);
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            String savedOrigin = (String) session.getAttribute(OAuth2LoginOriginFilter.SESSION_KEY);
+            if (savedOrigin != null) {
+                session.removeAttribute(OAuth2LoginOriginFilter.SESSION_KEY);
+                logger.info("세션에서 프론트엔드 origin 복원: " + savedOrigin);
+                return buildRedirectUrl(savedOrigin);
             }
         }
 
-        return targetUrl;
+        throw new IllegalStateException("세션에 저장된 프론트엔드 origin이 없어 리다이렉트 URL을 결정할 수 없습니다.");
     }
 
     private String buildRedirectUrl(String baseUrl) {
