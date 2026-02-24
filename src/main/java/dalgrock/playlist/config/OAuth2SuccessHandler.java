@@ -7,8 +7,8 @@ import dalgrock.playlist.model.OauthProvider;
 import dalgrock.playlist.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -17,16 +17,11 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import jakarta.servlet.http.HttpSession;
-
 import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-
-    @Value("${app.auth.samesite-cookie}")
-    private String sameSite;
 
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
@@ -88,46 +83,25 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             String accessToken,
             String redirectUrl
     ) throws IOException {
-        CookieConfig cookieConfig = extractCookieConfig(redirectUrl);
+        String domain = null;
+        if (redirectUrl.contains("pliview.kr")) {
+            domain = ".pliview.kr";
+        } else if (redirectUrl.contains("localhost")) {
+            domain = "localhost";
+        }
 
-        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("access_token", accessToken)
+        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
                 .path("/")
                 .httpOnly(false)
-                .maxAge(3600)
-                .secure(true);
+                .maxAge(3600000)
+                .secure(true)
+                .sameSite("None")
+                .domain(domain)
+                .build();
 
-        if (cookieConfig.domain() != null) {
-            cookieBuilder.domain(cookieConfig.domain());
-        }
-
-        if (cookieConfig.sameSite() != null) {
-            cookieBuilder.sameSite(cookieConfig.sameSite());
-        }
-
-        ResponseCookie cookie = cookieBuilder.build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        logger.info("최종 Set-Cookie 헤더: " + cookie.toString());
 
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
-    }
-
-    private CookieConfig extractCookieConfig(String redirectUrl) {
-        try {
-            java.net.URI uri = new java.net.URI(redirectUrl);
-            String host = uri.getHost();
-
-            String domain = null;
-            if ("localhost".equalsIgnoreCase(host)) {
-                domain = "localhost";
-            }
-
-            return new CookieConfig(domain, sameSite);
-
-        } catch (java.net.URISyntaxException e) {
-            logger.warn("redirectUrl 파싱 실패, 기본값 사용: " + redirectUrl, e);
-            return new CookieConfig(null, sameSite);
-        }
-    }
-
-    private record CookieConfig(String domain, String sameSite) {
     }
 }
