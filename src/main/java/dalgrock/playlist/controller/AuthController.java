@@ -30,7 +30,7 @@ public class AuthController {
                     2. 카카오 로그인 페이지로 리다이렉트 (302)
                     3. 사용자가 카카오에서 인증
                     4. 카카오가 /login/oauth2/code/kakao 로 콜백
-                    5. 인증 성공 시 /oauth-callback.html?token={jwt} 로 리다이렉트
+                    5. 인증 성공 시 {origin}/ 로 리다이렉트
                     
                     **주의:** 이 메서드는 Swagger 문서화용이며 실제로는 실행되지 않습니다.
                     """
