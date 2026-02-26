@@ -125,7 +125,7 @@ public class ReportService {
             JsonNode titleNode = root.path("overallSummary").path("title");
             return titleNode.isMissingNode() ? null : titleNode.asText(null);
         } catch (Exception e) {
-            log.warn("Failed to parse report content for title", e);
+            log.warn("리포트 content에서 title 파싱 실패", e);
             return null;
         }
     }
@@ -144,7 +144,7 @@ public class ReportService {
             tagsNode.forEach(n -> tags.add(n.asText()));
             return tags;
         } catch (Exception e) {
-            log.warn("Failed to parse report content for summaryTags", e);
+            log.warn("리포트 content에서 summaryTags 파싱 실패", e);
             return List.of();
         }
     }

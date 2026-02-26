@@ -62,7 +62,7 @@ public class WeeklyReportScheduler {
             log.info("주간 레코드 생성. 성공: {}, 실패: {}", successCount, failureCount);
 
         } catch (Exception e) {
-            log.error("Fatal error during weekly report generation", e);
+            log.error("주간 리포트 생성 중 치명적 오류 발생", e);
         }
     }
 }
