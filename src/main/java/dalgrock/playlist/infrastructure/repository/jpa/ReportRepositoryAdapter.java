@@ -2,6 +2,7 @@ package dalgrock.playlist.infrastructure.repository.jpa;
 
 import dalgrock.playlist.infrastructure.repository.ReportRepository;
 import dalgrock.playlist.model.Report;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -20,5 +21,10 @@ public class ReportRepositoryAdapter implements ReportRepository {
     @Override
     public Optional<Report> findByUserIdAndWeeklyId(Long userId, Long weeklyId) {
         return jpaReportRepository.findByUserIdAndWeekly_Id(userId, weeklyId);
+    }
+
+    @Override
+    public List<Report> findByUserIdAndWeeklyIdIn(Long userId, List<Long> weeklyIds) {
+        return jpaReportRepository.findByUserIdAndWeeklyIdIn(userId, weeklyIds);
     }
 }
