@@ -41,4 +41,20 @@ public class Report extends BaseTimeEntity {
     @Column(nullable = false)
     @Builder.Default
     private ReportStatus status = ReportStatus.CREATED;
+
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    public void startProcessing() {
+        this.status = ReportStatus.PROCESSING;
+    }
+
+    public void complete(String content) {
+        this.status = ReportStatus.COMPLETED;
+        this.content = content;
+    }
+
+    public void fail() {
+        this.status = ReportStatus.FAILED;
+    }
 }

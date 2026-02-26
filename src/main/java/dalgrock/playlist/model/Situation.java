@@ -1,9 +1,8 @@
 package dalgrock.playlist.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Embeddable
 public class Situation {
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = SituationValueConverter.class)
     @Column(name = "value", nullable = false)
     private SituationValue value;
 

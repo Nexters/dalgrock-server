@@ -24,7 +24,7 @@ public enum SituationValue {
     NAP(SituationCategory.LEISURE, "낮잠"),
     DATE(SituationCategory.LEISURE, "데이트"),
 
-    UNKNOWN(SituationCategory.UNKNOWN, "미상");;
+    UNKNOWN(SituationCategory.UNKNOWN, "미상");
 
     private final SituationCategory category;
     private final String value;
@@ -35,9 +35,12 @@ public enum SituationValue {
     }
 
     public static SituationValue fromString(String text) {
-        for (SituationValue value : SituationValue.values()) {
-            if (value.name().equalsIgnoreCase(text)) {
-                return value;
+        if (text == null || text.isBlank()) {
+            return UNKNOWN;
+        }
+        for (SituationValue s : SituationValue.values()) {
+            if (s.name().equalsIgnoreCase(text) || s.value.equals(text)) {
+                return s;
             }
         }
         return UNKNOWN;

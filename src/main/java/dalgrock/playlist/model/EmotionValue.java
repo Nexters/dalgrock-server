@@ -7,6 +7,7 @@ public enum EmotionValue {
 
     // 들뜬
     HAPPY(EmotionCategory.EXCITED, "행복"),
+    JOY(EmotionCategory.EXCITED, "기쁨"),
     FLUTTER(EmotionCategory.EXCITED, "설렘"),
     EXCITED(EmotionCategory.EXCITED, "신남"),
     PROUD(EmotionCategory.EXCITED, "뿌듯함"),
@@ -47,9 +48,12 @@ public enum EmotionValue {
     }
 
     public static EmotionValue fromString(String text) {
-        for (EmotionValue value : EmotionValue.values()) {
-            if (value.name().equalsIgnoreCase(text)) {
-                return value;
+        if (text == null || text.isBlank()) {
+            return UNKNOWN;
+        }
+        for (EmotionValue e : EmotionValue.values()) {
+            if (e.name().equalsIgnoreCase(text) || e.value.equals(text)) {
+                return e;
             }
         }
         return UNKNOWN;

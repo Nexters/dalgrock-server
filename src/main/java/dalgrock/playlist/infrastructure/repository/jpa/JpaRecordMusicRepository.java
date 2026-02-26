@@ -10,9 +10,9 @@ import org.springframework.data.repository.query.Param;
 public interface JpaRecordMusicRepository extends JpaRepository<RecordMusic, Long> {
 
     @Query(value = """
-            select m.title, m.artist, m.thumbnail
+            select m.title as title, m.artist as artist, m.thumbnail as thumbnail, m.genre as genre
             from record_music rm
-            inner join musics m 
+            inner join musics m
             on rm.music_id = m.id
             where rm.record_id = :recordId
             """, nativeQuery = true)
