@@ -10,6 +10,10 @@ import dalgrock.playlist.model.Report;
 import dalgrock.playlist.model.ReportStatus;
 import dalgrock.playlist.model.Weekly;
 import dalgrock.playlist.service.dto.response.GetReportResponse;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -23,6 +27,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Service
 public class ReportService {
+
+    private static final ZoneId APP_ZONE = ZoneId.of("Asia/Seoul");
 
     private final WeeklyRepository weeklyRepository;
     private final RecordRepository recordRepository;
@@ -45,20 +51,25 @@ public class ReportService {
         Map<Long, Report> reportByWeeklyId = allReports.stream()
                 .collect(Collectors.toMap(r -> r.getWeekly().getId(), r -> r, (a, b) -> a));
 
+        LocalDate currentWeekMonday = LocalDate.now(APP_ZONE)
+                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+
         List<GetReportResponse.WeeklyReportItem> items = weeklies.stream()
                 .sorted(Comparator.comparingInt(Weekly::getWeek).reversed())
                 .map(weekly -> buildWeeklyItem(
                         weekly,
                         recordsByWeeklyId.getOrDefault(weekly.getId(), List.of()),
-                        reportByWeeklyId.get(weekly.getId())
+                        reportByWeeklyId.get(weekly.getId()),
+                        currentWeekMonday
                 ))
+                .filter(item -> "COMPLETED".equals(item.status()) || "ANALYZING".equals(item.status()))
                 .toList();
 
         return new GetReportResponse(year, month, items);
     }
 
     private GetReportResponse.WeeklyReportItem buildWeeklyItem(
-            Weekly weekly, List<Record> records, Report report) {
+            Weekly weekly, List<Record> records, Report report, LocalDate currentWeekMonday) {
 
         int recordCount = records.size();
 
@@ -82,13 +93,40 @@ public class ReportService {
             );
         }
 
+        if (records.isEmpty()) {
+            return new GetReportResponse.WeeklyReportItem(
+                    weekly.getWeek(), null, "EMPTY",
+                    null, 0, List.of(), null, List.of()
+            );
+        }
+
         List<String> emotions = extractEmotionsFromRecords(records);
-        Long reportId = report != null ? report.getId() : null;
+        LocalDate weeklyMonday = getWeeklyMonday(weekly);
+
+        if (!weeklyMonday.isBefore(currentWeekMonday)) {
+            Long reportId = report != null ? report.getId() : null;
+            return new GetReportResponse.WeeklyReportItem(
+                    weekly.getWeek(), reportId, "ANALYZING",
+                    null, recordCount, emotions,
+                    representativeThumbnail, thumbnails
+            );
+        }
+
+        // 과거 주차이며 기록이 있지만 완료된 리포트가 없음 → EXPIRED
         return new GetReportResponse.WeeklyReportItem(
-                weekly.getWeek(), reportId, "ANALYZING",
+                weekly.getWeek(), null, "EXPIRED",
                 null, recordCount, emotions,
                 representativeThumbnail, thumbnails
         );
+    }
+
+    /**
+     * Weekly(year, month, week)에 해당하는 월요일을 반환합니다.
+     * week 번호는 해당 월요일의 dayOfMonth 기준: (dayOfMonth - 1) / 7 + 1
+     */
+    private LocalDate getWeeklyMonday(Weekly weekly) {
+        LocalDate firstDayOfBucket = LocalDate.of(weekly.getYear(), weekly.getMonth(), (weekly.getWeek() - 1) * 7 + 1);
+        return firstDayOfBucket.with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY));
     }
 
     /**
