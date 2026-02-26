@@ -46,7 +46,7 @@ public class ReportService {
                 .collect(Collectors.toMap(r -> r.getWeekly().getId(), r -> r, (a, b) -> a));
 
         List<GetReportResponse.WeeklyReportItem> items = weeklies.stream()
-                .sorted(Comparator.comparingInt(Weekly::getWeek))
+                .sorted(Comparator.comparingInt(Weekly::getWeek).reversed())
                 .map(weekly -> buildWeeklyItem(
                         weekly,
                         recordsByWeeklyId.getOrDefault(weekly.getId(), List.of()),
