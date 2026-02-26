@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,68 +57,61 @@ public class ReportService {
 
         List<GetReportResponse.WeeklyReportItem> items = weeklies.stream()
                 .sorted(Comparator.comparingInt(Weekly::getWeek).reversed())
-                .map(weekly -> buildWeeklyItem(
+                .flatMap(weekly -> buildWeeklyItem(
                         weekly,
                         recordsByWeeklyId.getOrDefault(weekly.getId(), List.of()),
                         reportByWeeklyId.get(weekly.getId()),
                         currentWeekMonday
-                ))
-                .filter(item -> "COMPLETED".equals(item.status()) || "ANALYZING".equals(item.status()))
+                ).stream())
                 .toList();
 
         return new GetReportResponse(year, month, items);
     }
 
-    private GetReportResponse.WeeklyReportItem buildWeeklyItem(
+    private Optional<GetReportResponse.WeeklyReportItem> buildWeeklyItem(
             Weekly weekly, List<Record> records, Report report, LocalDate currentWeekMonday) {
 
-        int recordCount = records.size();
+        if (report != null && report.getStatus() == ReportStatus.COMPLETED) {
+            int recordCount = records.size();
+            List<String> allThumbnails = collectThumbnails(records);
+            String representativeThumbnail = allThumbnails.isEmpty() ? null : allThumbnails.get(0);
+            String title = extractTitle(report.getContent());
+            List<String> emotions = extractSummaryTags(report.getContent());
+            return Optional.of(new GetReportResponse.WeeklyReportItem(
+                    weekly.getWeek(), report.getId(), "COMPLETED",
+                    title, recordCount, emotions,
+                    representativeThumbnail, buildPaddedThumbnails(allThumbnails, representativeThumbnail)
+            ));
+        }
 
-        List<String> allThumbnails = records.stream()
+        if (records.isEmpty()) {
+            return Optional.empty();
+        }
+
+        LocalDate weeklyMonday = getWeeklyMonday(weekly);
+        if (weeklyMonday.isBefore(currentWeekMonday)) {
+            return Optional.empty();
+        }
+
+        int recordCount = records.size();
+        List<String> allThumbnails = collectThumbnails(records);
+        String representativeThumbnail = allThumbnails.isEmpty() ? null : allThumbnails.get(0);
+        List<String> emotions = extractEmotionsFromRecords(records);
+        Long reportId = report != null ? report.getId() : null;
+        return Optional.of(new GetReportResponse.WeeklyReportItem(
+                weekly.getWeek(), reportId, "ANALYZING",
+                null, recordCount, emotions,
+                representativeThumbnail, buildPaddedThumbnails(allThumbnails, representativeThumbnail)
+        ));
+    }
+
+    private List<String> collectThumbnails(List<Record> records) {
+        return records.stream()
                 .map(Record::getThumbnail)
                 .filter(t -> t != null && !t.isBlank())
                 .distinct()
                 .limit(5)
                 .toList();
-
-        String representativeThumbnail = allThumbnails.isEmpty() ? null : allThumbnails.get(0);
-        List<String> thumbnails = buildPaddedThumbnails(allThumbnails, representativeThumbnail);
-
-        if (report != null && report.getStatus() == ReportStatus.COMPLETED) {
-            String title = extractTitle(report.getContent());
-            List<String> emotions = extractSummaryTags(report.getContent());
-            return new GetReportResponse.WeeklyReportItem(
-                    weekly.getWeek(), report.getId(), "COMPLETED",
-                    title, recordCount, emotions,
-                    representativeThumbnail, thumbnails
-            );
-        }
-
-        if (records.isEmpty()) {
-            return new GetReportResponse.WeeklyReportItem(
-                    weekly.getWeek(), null, "EMPTY",
-                    null, 0, List.of(), null, List.of()
-            );
-        }
-
-        List<String> emotions = extractEmotionsFromRecords(records);
-        LocalDate weeklyMonday = getWeeklyMonday(weekly);
-
-        if (!weeklyMonday.isBefore(currentWeekMonday)) {
-            Long reportId = report != null ? report.getId() : null;
-            return new GetReportResponse.WeeklyReportItem(
-                    weekly.getWeek(), reportId, "ANALYZING",
-                    null, recordCount, emotions,
-                    representativeThumbnail, thumbnails
-            );
-        }
-
-        // 과거 주차이며 기록이 있지만 완료된 리포트가 없음 → EXPIRED
-        return new GetReportResponse.WeeklyReportItem(
-                weekly.getWeek(), null, "EXPIRED",
-                null, recordCount, emotions,
-                representativeThumbnail, thumbnails
-        );
     }
 
     /**
