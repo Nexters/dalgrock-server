@@ -45,8 +45,16 @@ public class Report extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    public void startProcessing() {
+        this.status = ReportStatus.PROCESSING;
+    }
+
     public void complete(String content) {
         this.status = ReportStatus.COMPLETED;
         this.content = content;
+    }
+
+    public void fail() {
+        this.status = ReportStatus.FAILED;
     }
 }

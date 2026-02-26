@@ -56,6 +56,7 @@ public class WeeklyReportScheduler {
                     }
                 } catch (Exception e) {
                     failureCount++;
+                    log.error("주간 리포트 생성 실패, 사용자ID: {}", user.getId(), e);
                 }
             }
             log.info("주간 레코드 생성. 성공: {}, 실패: {}", successCount, failureCount);

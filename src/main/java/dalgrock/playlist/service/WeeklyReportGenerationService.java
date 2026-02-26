@@ -109,17 +109,35 @@ public class WeeklyReportGenerationService {
                         .status(ReportStatus.CREATED)
                         .build()));
 
-        String dataForAnalysis = weeklyReportDataService.buildDataForAnalysis(userId, year, month, week);
-        String systemMessage = "당신은 음악 기록 서비스의 주간 분석 리포트를 생성하는 AI 어시스턴트입니다.\n"
-                + "사용자의 이번 주 음악 기록 데이터를 분석하여 따뜻하고 공감적인 문장들을 생성해주세요.\n"
-                + dataForAnalysis + "\n"
-                + DATA_FOR_CREATE_REPORT + "\n"
-                + OUTPUT_FORMAT;
+        if (report.getStatus() == ReportStatus.COMPLETED) {
+            log.info("이미 완료된 리포트입니다. userId={}, weeklyId={}", userId, weekly.getId());
+            return Optional.of(report);
+        }
+        if (report.getStatus() == ReportStatus.PROCESSING) {
+            log.warn("이미 처리 중인 리포트입니다. userId={}, weeklyId={}", userId, weekly.getId());
+            return Optional.empty();
+        }
 
-        String llmResponse = deepSeekReportClient.ask(systemMessage);
-        String mergedContent = weeklyReportMergeService.merge(llmResponse, payload);
+        report.startProcessing();
+        reportRepository.save(report);
 
-        report.complete(mergedContent);
-        return Optional.of(reportRepository.save(report));
+        try {
+            String dataForAnalysis = weeklyReportDataService.buildDataForAnalysis(userId, year, month, week);
+            String systemMessage = "당신은 음악 기록 서비스의 주간 분석 리포트를 생성하는 AI 어시스턴트입니다.\n"
+                    + "사용자의 이번 주 음악 기록 데이터를 분석하여 따뜻하고 공감적인 문장들을 생성해주세요.\n"
+                    + dataForAnalysis + "\n"
+                    + DATA_FOR_CREATE_REPORT + "\n"
+                    + OUTPUT_FORMAT;
+
+            String llmResponse = deepSeekReportClient.ask(systemMessage);
+            String mergedContent = weeklyReportMergeService.merge(llmResponse, payload);
+
+            report.complete(mergedContent);
+            return Optional.of(reportRepository.save(report));
+        } catch (Exception e) {
+            report.fail();
+            reportRepository.save(report);
+            throw e;
+        }
     }
 }
