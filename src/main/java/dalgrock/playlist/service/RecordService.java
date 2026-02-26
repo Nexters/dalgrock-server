@@ -1,9 +1,9 @@
 package dalgrock.playlist.service;
 
-import dalgrock.playlist.core.exception.ErrorCode;
+import dalgrock.playlist.core.exception.ForbiddenException;
 import dalgrock.playlist.core.exception.RecordAlreadyExistsTodayException;
 import dalgrock.playlist.core.exception.RecordNotFoundException;
-import dalgrock.playlist.core.exception.UnauthorizedException;
+import dalgrock.playlist.core.exception.InvalidInputValueException;
 import dalgrock.playlist.infrastructure.repository.MusicRepository;
 import dalgrock.playlist.infrastructure.repository.RecordMusicRepository;
 import dalgrock.playlist.infrastructure.repository.RecordRepository;
@@ -51,10 +51,10 @@ public class RecordService {
 
     public GetRecordDetailResponse getRecordDetail(Long userId, Long recordId) {
         Record record = recordRepository.findById(recordId)
-                .orElseThrow(() -> new RecordNotFoundException(ErrorCode.RECORD_NOT_FOUND.getMessage()));
+                .orElseThrow(RecordNotFoundException::new);
 
         if (!record.getUserId().equals(userId)) {
-            throw new UnauthorizedException(ErrorCode.FORBIDDEN.getMessage());
+            throw new ForbiddenException();
         }
 
         List<GetRecordMusicDto> recordMusics = recordMusicRepository.findAllByRecordId(record.getId());
@@ -115,7 +115,9 @@ public class RecordService {
         return new GetRecordResponse.RecordItem(null, null, List.of(), List.of(), isToday);
     }
 
-    /** createdAt의 날짜가 [weekMonday, weekSunday] 안에 있는지 검사. 저장이 KST면 atZone(APP_ZONE), UTC면 UTC→Seoul 변환 필요. */
+    /**
+     * createdAt의 날짜가 [weekMonday, weekSunday] 안에 있는지 검사. 저장이 KST면 atZone(APP_ZONE), UTC면 UTC→Seoul 변환 필요.
+     */
     private static boolean isDateInRange(LocalDateTime createdAt, LocalDate weekMonday, LocalDate weekSunday) {
         LocalDate d = createdAt.atZone(APP_ZONE).toLocalDate();
         return !d.isBefore(weekMonday) && !d.isAfter(weekSunday);
@@ -146,10 +148,9 @@ public class RecordService {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
 
-        // TODO: 기록생성 제한 임시 해제
-//        if (recordRepository.existsByUserIdAndCreatedAtBetween(userId, startOfDay, startOfNextDay)) {
-//            throw new RecordAlreadyExistsTodayException();
-//        }
+        if (recordRepository.existsByUserIdAndCreatedAtBetween(userId, startOfDay, startOfNextDay)) {
+            throw new RecordAlreadyExistsTodayException();
+        }
 
         int year = getYearOfWeek(today);
         int month = getMonthOfWeek(today);
@@ -255,10 +256,10 @@ public class RecordService {
     @Transactional
     public GetRecordDetailResponse updateRecord(Long userId, Long recordId, UpdateRecordCommand command) {
         Record record = recordRepository.findById(recordId)
-                .orElseThrow(() -> new RecordNotFoundException(ErrorCode.RECORD_NOT_FOUND.getMessage()));
+                .orElseThrow(RecordNotFoundException::new);
 
         if (!record.getUserId().equals(userId)) {
-            throw new UnauthorizedException(ErrorCode.FORBIDDEN.getMessage());
+            throw new ForbiddenException();
         }
 
         switch (command.type().toLowerCase()) {
@@ -266,7 +267,7 @@ public class RecordService {
             case "emotions" -> updateEmotions(record, command.emotions());
             case "situations" -> updateSituations(record, command.situations());
             case "content" -> updateContent(record, command.content());
-            default -> throw new IllegalArgumentException("Invalid update type: " + command.type());
+            default -> throw new InvalidInputValueException();
         }
 
         Record savedRecord = recordRepository.save(record);
@@ -311,10 +312,10 @@ public class RecordService {
     @Transactional
     public void deleteRecord(Long userId, Long recordId) {
         Record record = recordRepository.findById(recordId)
-                .orElseThrow(() -> new RecordNotFoundException(ErrorCode.RECORD_NOT_FOUND.getMessage()));
+                .orElseThrow(RecordNotFoundException::new);
 
         if (!record.getUserId().equals(userId)) {
-            throw new UnauthorizedException(ErrorCode.FORBIDDEN.getMessage());
+            throw new ForbiddenException();
         }
 
         record.softDelete(LocalDateTime.now());

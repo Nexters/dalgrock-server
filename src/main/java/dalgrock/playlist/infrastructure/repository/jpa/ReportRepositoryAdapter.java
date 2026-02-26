@@ -19,6 +19,11 @@ public class ReportRepositoryAdapter implements ReportRepository {
     }
 
     @Override
+    public Optional<Report> findById(Long id) {
+        return jpaReportRepository.findById(id);
+    }
+
+    @Override
     public Optional<Report> findByUserIdAndWeeklyId(Long userId, Long weeklyId) {
         return jpaReportRepository.findByUserIdAndWeekly_Id(userId, weeklyId);
     }

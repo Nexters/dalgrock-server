@@ -1,5 +1,6 @@
 package dalgrock.playlist.config;
 
+import dalgrock.playlist.core.exception.OAuthRedirectUrlException;
 import dalgrock.playlist.core.exception.UserNotFoundException;
 import dalgrock.playlist.core.jwt.JwtTokenProvider;
 import dalgrock.playlist.infrastructure.repository.UserRepository;
@@ -56,7 +57,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             }
         }
 
-        throw new IllegalStateException("세션에 저장된 프론트엔드 origin이 없어 리다이렉트 URL을 결정할 수 없습니다.");
+        throw new OAuthRedirectUrlException();
     }
 
     private String buildRedirectUrl(String baseUrl) {
