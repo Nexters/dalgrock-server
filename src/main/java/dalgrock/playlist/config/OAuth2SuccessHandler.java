@@ -7,8 +7,8 @@ import dalgrock.playlist.model.OauthProvider;
 import dalgrock.playlist.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -22,15 +22,6 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-
-    @Value("${app.auth.redirect-uri}")
-    private String targetUrl;
-
-    @Value("${app.auth.samesite-cookie}")
-    private String sameSite;
-
-    @Value("${app.auth.secure-cookie}")
-    private Boolean secureHttp;
 
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
@@ -55,27 +46,17 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     }
 
     private String determineRedirectUrl(HttpServletRequest request) {
-        String origin = request.getHeader("Origin");
-        String referer = request.getHeader("Referer");
-        logger.info("origin: " + origin);
-        logger.info("referer: " + referer);
-
-        if (origin != null && !origin.isBlank() && !origin.contains("kakao.com")) {
-            return buildRedirectUrl(origin);
-        }
-
-        if (referer != null && !referer.isBlank() && !referer.contains("kauth.kakao.com")) {
-            try {
-                java.net.URI uri = new java.net.URI(referer);
-                String host = uri.getScheme() + "://" + uri.getAuthority();
-                logger.info("Referer에서 추출한 호스트: " + host);
-                return buildRedirectUrl(host);
-            } catch (java.net.URISyntaxException e) {
-                logger.warn("Referer 파싱 실패: " + referer, e);
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            String savedOrigin = (String) session.getAttribute(OAuth2LoginOriginFilter.SESSION_KEY);
+            if (savedOrigin != null) {
+                session.removeAttribute(OAuth2LoginOriginFilter.SESSION_KEY);
+                logger.info("세션에서 프론트엔드 origin 복원: " + savedOrigin);
+                return buildRedirectUrl(savedOrigin);
             }
         }
 
-        return targetUrl;
+        throw new IllegalStateException("세션에 저장된 프론트엔드 origin이 없어 리다이렉트 URL을 결정할 수 없습니다.");
     }
 
     private String buildRedirectUrl(String baseUrl) {
@@ -102,62 +83,25 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             String accessToken,
             String redirectUrl
     ) throws IOException {
-        CookieConfig cookieConfig = extractCookieConfig(redirectUrl);
+        String domain = null;
+        if (redirectUrl.contains("pliview.kr")) {
+            domain = ".pliview.kr";
+        } else if (redirectUrl.contains("localhost")) {
+            domain = "localhost";
+        }
 
-        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("access_token", accessToken)
+        ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
                 .path("/")
                 .httpOnly(false)
-                .maxAge(3600)
-                .secure(cookieConfig.secure());
+                .maxAge(3600000)
+                .secure(true)
+                .sameSite("None")
+                .domain(domain)
+                .build();
 
-        if (cookieConfig.domain() != null) {
-            cookieBuilder.domain(cookieConfig.domain());
-        }
-
-        if (cookieConfig.sameSite() != null) {
-            cookieBuilder.sameSite(cookieConfig.sameSite());
-        }
-
-        ResponseCookie cookie = cookieBuilder.build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        logger.info("최종 Set-Cookie 헤더: " + cookie.toString());
 
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
-    }
-
-    private CookieConfig extractCookieConfig(String redirectUrl) {
-        try {
-            java.net.URI uri = new java.net.URI(redirectUrl);
-            String scheme = uri.getScheme();
-            String host = uri.getHost();
-            boolean isHttps = "https".equalsIgnoreCase(scheme);
-
-            boolean secure = isHttps;
-
-            String domain = null;
-            if ("localhost".equalsIgnoreCase(host)) {
-                domain = "localhost";
-            }
-
-            String sameSiteValue;
-            if (!isHttps) {
-                sameSiteValue = null;
-            } else {
-                sameSiteValue = sameSite;
-            }
-            return new CookieConfig(scheme, host, domain, secure, sameSiteValue);
-
-        } catch (java.net.URISyntaxException e) {
-            logger.warn("redirectUrl 파싱 실패, 기본값 사용: " + redirectUrl, e);
-            return new CookieConfig("https", null, null, secureHttp, sameSite);
-        }
-    }
-
-    private record CookieConfig(
-            String scheme,
-            String host,
-            String domain,
-            boolean secure,
-            String sameSite
-    ) {
     }
 }
