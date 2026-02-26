@@ -2,12 +2,13 @@ package dalgrock.playlist.controller;
 
 import dalgrock.playlist.controller.dto.request.CreateRecordRequest;
 import dalgrock.playlist.controller.dto.request.UpdateRecordRequest;
+import dalgrock.playlist.core.exception.InvalidInputValueException;
 import dalgrock.playlist.model.UserPrincipal;
 import dalgrock.playlist.service.RecordService;
+import dalgrock.playlist.service.WeeklyService;
 import dalgrock.playlist.service.dto.command.CreateRecordCommand;
 import dalgrock.playlist.service.dto.command.CreateRecordMusicCommand;
 import dalgrock.playlist.service.dto.command.UpdateRecordCommand;
-import dalgrock.playlist.service.WeeklyService;
 import dalgrock.playlist.service.dto.response.CreateRecordResponse;
 import dalgrock.playlist.service.dto.response.GetRecordDetailResponse;
 import dalgrock.playlist.service.dto.response.GetRecordResponse;
@@ -21,12 +22,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -36,9 +35,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 import tools.jackson.databind.JsonNode;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Tag(name = "Record", description = "내 기록 관리 API")
 @Validated
@@ -161,7 +163,7 @@ public class RecordControllerV1 {
         return switch (type) {
             case "content" -> {
                 if (data.isArray() || data.isObject()) {
-                    throw new IllegalArgumentException("content type requires string data");
+                    throw new InvalidInputValueException();
                 }
                 yield new UpdateRecordCommand(type, null, null, null, data.asText(null));
             }
@@ -180,7 +182,7 @@ public class RecordControllerV1 {
                     data.isArray() ? parseMusicList(data) : List.of(),
                     null, null, null
             );
-            default -> throw new IllegalArgumentException("Invalid update type: " + type);
+            default -> throw new InvalidInputValueException();
         };
     }
 
@@ -194,7 +196,7 @@ public class RecordControllerV1 {
         List<CreateRecordMusicCommand> result = new ArrayList<>();
         arr.forEach(node -> {
             if (!node.isObject()) {
-                throw new IllegalArgumentException("musics type requires array of objects");
+                throw new InvalidInputValueException();
             }
             result.add(new CreateRecordMusicCommand(
                     node.has("title") ? node.get("title").asText() : "",

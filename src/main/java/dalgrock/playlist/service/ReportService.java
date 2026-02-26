@@ -3,8 +3,7 @@ package dalgrock.playlist.service;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dalgrock.playlist.core.exception.BusinessException;
-import dalgrock.playlist.core.exception.ErrorCode;
+import dalgrock.playlist.core.exception.ForbiddenException;
 import dalgrock.playlist.core.exception.ReportNotFoundException;
 import dalgrock.playlist.infrastructure.repository.RecordRepository;
 import dalgrock.playlist.infrastructure.repository.ReportRepository;
@@ -203,7 +202,7 @@ public class ReportService {
                 .orElseThrow(ReportNotFoundException::new);
 
         if (!report.getUserId().equals(userId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new ForbiddenException();
         }
 
         String content = report.getContent();

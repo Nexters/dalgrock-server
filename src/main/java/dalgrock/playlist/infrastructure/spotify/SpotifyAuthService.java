@@ -1,5 +1,6 @@
 package dalgrock.playlist.infrastructure.spotify;
 
+import dalgrock.playlist.core.exception.SpotifyTokenException;
 import dalgrock.playlist.infrastructure.spotify.dto.SpotifyTokenResponse;
 import dalgrock.playlist.infrastructure.spotify.dto.TokenCache;
 import java.nio.charset.StandardCharsets;
@@ -70,7 +71,7 @@ public class SpotifyAuthService {
                 .body(SpotifyTokenResponse.class);
 
         if (response == null) {
-            throw new IllegalStateException("Spotify 액세스 토큰 발급 실패");
+            throw new SpotifyTokenException();
         }
 
         Instant expiryTime = Instant.now().plusSeconds(response.expiresIn());
