@@ -8,6 +8,8 @@ public interface ReportRepository {
 
     Report save(Report report);
 
+    Optional<Report> findById(Long id);
+
     Optional<Report> findByUserIdAndWeeklyId(Long userId, Long weeklyId);
 
     List<Report> findByUserIdAndWeeklyIdIn(Long userId, List<Long> weeklyIds);

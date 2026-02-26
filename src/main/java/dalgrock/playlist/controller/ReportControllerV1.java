@@ -2,6 +2,7 @@ package dalgrock.playlist.controller;
 
 import dalgrock.playlist.model.UserPrincipal;
 import dalgrock.playlist.service.ReportService;
+import dalgrock.playlist.service.dto.response.GetReportDetailResponse;
 import dalgrock.playlist.service.dto.response.GetReportResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @SecurityRequirement(name = "cookieAuth")
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/v1/report")
+@RequestMapping("/v1/reports")
 public class ReportControllerV1 {
 
     private final ReportService reportService;
@@ -34,5 +36,14 @@ public class ReportControllerV1 {
             @RequestParam @Min(1) @Max(12) int month
     ) {
         return reportService.getMonthlyReport(principal.userId(), year, month);
+    }
+
+    @Operation(summary = "주간 리포트 상세 조회", description = "reportId에 해당하는 주간 리포트 상세 정보를 조회합니다")
+    @GetMapping("/{reportId}")
+    public GetReportDetailResponse getReportDetail(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long reportId
+    ) {
+        return reportService.getReportDetail(principal.userId(), reportId);
     }
 }
