@@ -115,7 +115,9 @@ public class RecordService {
         return new GetRecordResponse.RecordItem(null, null, List.of(), List.of(), isToday);
     }
 
-    /** createdAt의 날짜가 [weekMonday, weekSunday] 안에 있는지 검사. 저장이 KST면 atZone(APP_ZONE), UTC면 UTC→Seoul 변환 필요. */
+    /**
+     * createdAt의 날짜가 [weekMonday, weekSunday] 안에 있는지 검사. 저장이 KST면 atZone(APP_ZONE), UTC면 UTC→Seoul 변환 필요.
+     */
     private static boolean isDateInRange(LocalDateTime createdAt, LocalDate weekMonday, LocalDate weekSunday) {
         LocalDate d = createdAt.atZone(APP_ZONE).toLocalDate();
         return !d.isBefore(weekMonday) && !d.isAfter(weekSunday);
@@ -146,10 +148,9 @@ public class RecordService {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
 
-        // TODO: 기록생성 제한 임시 해제
-//        if (recordRepository.existsByUserIdAndCreatedAtBetween(userId, startOfDay, startOfNextDay)) {
-//            throw new RecordAlreadyExistsTodayException();
-//        }
+        if (recordRepository.existsByUserIdAndCreatedAtBetween(userId, startOfDay, startOfNextDay)) {
+            throw new RecordAlreadyExistsTodayException();
+        }
 
         int year = getYearOfWeek(today);
         int month = getMonthOfWeek(today);
