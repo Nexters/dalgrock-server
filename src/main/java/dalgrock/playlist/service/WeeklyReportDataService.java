@@ -7,6 +7,7 @@ import dalgrock.playlist.infrastructure.repository.dto.GetRecordMusicDto;
 import dalgrock.playlist.model.Emotion;
 import dalgrock.playlist.model.Record;
 import dalgrock.playlist.model.Weekly;
+import dalgrock.playlist.service.dto.WeeklyReportPayloadData;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -17,6 +18,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,6 +40,39 @@ public class WeeklyReportDataService {
     private final RecordMusicRepository recordMusicRepository;
 
     /**
+     * 해당 사용자의 "이번 주" (오늘 기준 월~일 주) 리포트 병합용 페이로드 데이터를 반환합니다.
+     */
+    @Transactional(readOnly = true)
+    public Optional<WeeklyReportPayloadData> getReportPayloadData(Long userId) {
+        LocalDate today = ZonedDateTime.now(APP_ZONE).toLocalDate();
+        int year = getYearOfWeek(today);
+        int month = getMonthOfWeek(today);
+        int week = getWeekOfMonth(today);
+        return getReportPayloadData(userId, year, month, week);
+    }
+
+    /**
+     * 지정한 year, month, week에 해당하는 주간 리포트 병합용 페이로드 데이터를 반환합니다.
+     */
+    @Transactional(readOnly = true)
+    public Optional<WeeklyReportPayloadData> getReportPayloadData(Long userId, int year, int month, int week) {
+        Optional<Weekly> weeklyOpt = weeklyRepository.findByYearAndMonthAndWeek(year, month, week);
+        if (weeklyOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Weekly weekly = weeklyOpt.get();
+        List<Record> records = recordRepository.findByUserIdAndWeeklyIdIn(userId, List.of(weekly.getId()));
+
+        int[] prev = getPreviousWeek(year, month, week);
+        List<Record> prevRecords = weeklyRepository.findByYearAndMonthAndWeek(prev[0], prev[1], prev[2])
+                .map(w -> recordRepository.findByUserIdAndWeeklyIdIn(userId, List.of(w.getId())))
+                .orElse(List.of());
+
+        return Optional.of(buildPayloadDataFromRecords(weekly, records, prevRecords));
+    }
+
+    /**
      * 해당 사용자의 "이번 주" (오늘 기준 월~일 주) 기록으로 분석 데이터 문자열을 만듭니다.
      */
     @Transactional(readOnly = true)
@@ -45,8 +81,18 @@ public class WeeklyReportDataService {
         int year = getYearOfWeek(today);
         int month = getMonthOfWeek(today);
         int week = getWeekOfMonth(today);
+        return buildDataForAnalysis(userId, year, month, week);
+    }
 
+    /**
+     * 지정한 year, month, week에 해당하는 주간 기록으로 분석 데이터 문자열을 만듭니다.
+     */
+    @Transactional(readOnly = true)
+    public String buildDataForAnalysis(Long userId, int year, int month, int week) {
         Optional<Weekly> weeklyOpt = weeklyRepository.findByYearAndMonthAndWeek(year, month, week);
+        if (weeklyOpt.isEmpty()) {
+            throw new IllegalArgumentException("해당 주차 데이터가 없습니다: year=%d, month=%d, week=%d".formatted(year, month, week));
+        }
 
         List<Record> records = recordRepository.findByUserIdAndWeeklyIdIn(userId, List.of(weeklyOpt.get().getId()));
         return buildDataForAnalysisFromRecords(records);
@@ -63,6 +109,32 @@ public class WeeklyReportDataService {
     private static int getWeekOfMonth(LocalDate date) {
         LocalDate monday = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         return (monday.getDayOfMonth() - 1) / 7 + 1;
+    }
+
+    /** 이전 주의 year, month, week 반환 */
+    private static int[] getPreviousWeek(int year, int month, int week) {
+        if (week > 1) {
+            return new int[]{year, month, week - 1};
+        }
+        if (month > 1) {
+            LocalDate lastDayOfPrevMonth = LocalDate.of(year, month, 1).minusDays(1);
+            int prevMonth = lastDayOfPrevMonth.getMonthValue();
+            int prevYear = lastDayOfPrevMonth.getYear();
+            int prevWeek = getWeekOfMonth(lastDayOfPrevMonth);
+            return new int[]{prevYear, prevMonth, prevWeek};
+        }
+        LocalDate lastDayOfPrevYear = LocalDate.of(year, 1, 1).minusDays(1);
+        return new int[]{
+                lastDayOfPrevYear.getYear(),
+                lastDayOfPrevYear.getMonthValue(),
+                getWeekOfMonth(lastDayOfPrevYear)
+        };
+    }
+
+    private static LocalDate getMondayOfWeek(int year, int month, int week) {
+        int dayOfMonth = (week - 1) * 7 + 1;
+        int maxDay = LocalDate.of(year, month, 1).lengthOfMonth();
+        return LocalDate.of(year, month, Math.min(dayOfMonth, maxDay));
     }
 
     private static Map<String, String> toEmotionWithCategory(Emotion emotion) {
@@ -189,4 +261,198 @@ public class WeeklyReportDataService {
         sb.append("  ### 지난 주 통계\n  {\"감정 분포\": {}, \"장르 분포\": {}}\n");
         return sb.toString();
     }
+
+    private WeeklyReportPayloadData buildPayloadDataFromRecords(Weekly weekly, List<Record> records, List<Record> prevRecords) {
+        LocalDate monday = getMondayOfWeek(weekly.getYear(), weekly.getMonth(), weekly.getWeek());
+
+        List<Map<String, String>> weeklyPlaylistMusics = new ArrayList<>();
+        Map<String, List<String>> emotionToGenres = new LinkedHashMap<>();
+        Map<String, List<String>> emotionToThumbnails = new LinkedHashMap<>();
+        Map<String, List<String>> situationToThumbnails = new LinkedHashMap<>();
+        List<String> allGenres = new ArrayList<>();
+        List<Map<String, String>> allEmotionsForTop = new ArrayList<>();
+
+        for (Record record : records) {
+            List<Map<String, String>> emotionsWithCategory = record.getEmotions().stream()
+                    .map(WeeklyReportDataService::toEmotionWithCategory)
+                    .toList();
+            allEmotionsForTop.addAll(emotionsWithCategory);
+
+            List<String> situations = record.getSituationsToString();
+            List<GetRecordMusicDto> musics = recordMusicRepository.findAllByRecordId(record.getId());
+
+            for (GetRecordMusicDto m : musics) {
+                String genre = (m.getGenre() != null && !m.getGenre().isBlank()) ? m.getGenre() : "미분류";
+                allGenres.add(genre);
+                String thumb = (m.getThumbnail() != null && !m.getThumbnail().isBlank()) ? m.getThumbnail() : "";
+
+                weeklyPlaylistMusics.add(Map.of(
+                        "title", m.getTitle() != null ? m.getTitle() : "",
+                        "artist", m.getArtist() != null ? m.getArtist() : "",
+                        "thumbnail", thumb));
+
+                for (Map<String, String> em : emotionsWithCategory) {
+                    String emotionVal = em.get("emotion");
+                    emotionToGenres.computeIfAbsent(emotionVal, k -> new ArrayList<>()).add(genre);
+                    if (!thumb.isBlank()) {
+                        emotionToThumbnails.computeIfAbsent(emotionVal, k -> new ArrayList<>()).add(thumb);
+                    }
+                }
+                for (String sit : situations) {
+                    if (!thumb.isBlank()) {
+                        situationToThumbnails.computeIfAbsent(sit, k -> new ArrayList<>()).add(thumb);
+                    }
+                }
+            }
+        }
+
+        List<List<Map<String, String>>> dailyEmotionTagsByDay = buildDailyEmotionTagsByDay(records, monday);
+        List<String> topEmotionTagsForSummary = buildTopEmotionTagsForSummary(allEmotionsForTop, 2);
+
+        Map<String, Long> emotionCountsThisWeek = allEmotionsForTop.stream()
+                .collect(Collectors.groupingBy(WeeklyReportDataService::emotionKey, Collectors.counting()));
+        Map<String, Long> genreCountsThisWeek = allGenres.stream()
+                .collect(Collectors.groupingBy(g -> g, Collectors.counting()));
+
+        List<Map<String, String>> prevEmotions = prevRecords.stream()
+                .flatMap(r -> r.getEmotions().stream().map(WeeklyReportDataService::toEmotionWithCategory))
+                .toList();
+        List<String> prevGenres = prevRecords.stream()
+                .flatMap(r -> recordMusicRepository.findAllByRecordId(r.getId()).stream())
+                .map(m -> (m.getGenre() != null && !m.getGenre().isBlank()) ? m.getGenre() : "미분류")
+                .toList();
+        Map<String, Long> emotionCountsPrevWeek = prevEmotions.stream()
+                .collect(Collectors.groupingBy(WeeklyReportDataService::emotionKey, Collectors.counting()));
+        Map<String, Long> genreCountsPrevWeek = prevGenres.stream()
+                .collect(Collectors.groupingBy(g -> g, Collectors.counting()));
+
+        List<Map<String, Object>> topEmotionGenreData = buildTopEmotionGenreData(emotionToGenres, emotionToThumbnails, emotionCountsThisWeek, 3);
+
+        Set<String> seen = new HashSet<>();
+        List<Map<String, String>> dedupedPlaylist = weeklyPlaylistMusics.stream()
+                .filter(m -> seen.add(m.get("title") + "|" + m.get("artist")))
+                .toList();
+
+        String topEmotion = computeComparisonEmotion(emotionCountsThisWeek, emotionCountsPrevWeek);
+        String topGenre = computeComparisonGenre(genreCountsThisWeek, genreCountsPrevWeek);
+
+        Map<String, List<String>> sortedSituationThumbnails = situationToThumbnails.entrySet().stream()
+                .sorted((a, b) -> Integer.compare(b.getValue().size(), a.getValue().size()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new));
+
+        return new WeeklyReportPayloadData(
+                weekly,
+                dedupedPlaylist,
+                dailyEmotionTagsByDay,
+                topEmotionTagsForSummary,
+                emotionToGenres,
+                emotionToThumbnails,
+                sortedSituationThumbnails,
+                topEmotion,
+                topGenre,
+                emotionCountsThisWeek,
+                genreCountsThisWeek,
+                emotionCountsPrevWeek,
+                genreCountsPrevWeek,
+                topEmotionGenreData);
+    }
+
+    private List<List<Map<String, String>>> buildDailyEmotionTagsByDay(List<Record> records, LocalDate monday) {
+        List<List<Map<String, String>>> result = new ArrayList<>();
+
+        for (int i = 0; i < 7; i++) {
+            LocalDate dayDate = monday.plusDays(i);
+            List<Map<String, String>> dayEmotions = records.stream()
+                    .filter(r -> r.getCreatedAt().toLocalDate().equals(dayDate))
+                    .flatMap(r -> r.getEmotions().stream().map(WeeklyReportDataService::toEmotionWithCategory))
+                    .filter(m -> !"미상".equals(m.get("emotion")))
+                    .map(m -> Map.of("category", m.get("category"), "value", m.get("emotion")))
+                    .distinct()
+                    .toList();
+            result.add(dayEmotions);
+        }
+        return result;
+    }
+
+    private List<String> buildTopEmotionTagsForSummary(List<Map<String, String>> allEmotions, int limit) {
+        return allEmotions.stream()
+                .collect(Collectors.groupingBy(WeeklyReportDataService::emotionKey, Collectors.counting()))
+                .entrySet().stream()
+                .filter(e -> !e.getKey().endsWith("|미상"))
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(limit)
+                .map(e -> e.getKey().split("\\|", 2)[1])
+                .toList();
+    }
+
+    private List<Map<String, Object>> buildTopEmotionGenreData(
+            Map<String, List<String>> emotionToGenres,
+            Map<String, List<String>> emotionToThumbnails,
+            Map<String, Long> emotionCountsThisWeek,
+            int limit) {
+        return emotionCountsThisWeek.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(limit * 2)
+                .filter(e -> !e.getKey().endsWith("|미상"))
+                .map(e -> {
+                    String[] parts = e.getKey().split("\\|", 2);
+                    String emotion = parts[1];
+                    List<String> genres = emotionToGenres.getOrDefault(emotion, List.of());
+                    List<String> thumbs = emotionToThumbnails.getOrDefault(emotion, List.of());
+                    if (genres.isEmpty() && thumbs.isEmpty()) {
+                        return null;
+                    }
+                    return Map.<String, Object>of(
+                            "emotion", emotion,
+                            "genres", dedupeList(genres),
+                            "thumbnail", dedupeList(thumbs));
+                })
+                .filter( m -> m != null)
+                .limit(limit)
+                .toList();
+    }
+
+    private static List<String> dedupeList(List<String> list) {
+        return list.stream().filter(s -> s != null && !s.isBlank()).distinct().toList();
+    }
+
+    private String computeComparisonEmotion(Map<String, Long> thisWeek, Map<String, Long> prevWeek) {
+        if (prevWeek.isEmpty()) {
+            return thisWeek.entrySet().stream()
+                    .max(Map.Entry.comparingByValue())
+                    .map(e -> e.getKey().split("\\|", 2)[1])
+                    .orElse("");
+        }
+        return thisWeek.entrySet().stream()
+                .map(e -> {
+                    long diff = e.getValue() - prevWeek.getOrDefault(e.getKey(), 0L);
+                    return Map.entry(e.getKey(), diff);
+                })
+                .filter(e -> e.getValue() > 0)
+                .max(Map.Entry.comparingByValue())
+                .map(e -> e.getKey().split("\\|", 2)[1])
+                .orElseGet(() -> thisWeek.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .map(x -> x.getKey().split("\\|", 2)[1])
+                        .orElse(""));
+    }
+
+    private String computeComparisonGenre(Map<String, Long> thisWeek, Map<String, Long> prevWeek) {
+        if (prevWeek.isEmpty()) {
+            return thisWeek.entrySet().stream()
+                    .max(Map.Entry.comparingByValue())
+                    .map(Map.Entry::getKey)
+                    .orElse("");
+        }
+        return thisWeek.entrySet().stream()
+                .map(e -> Map.entry(e.getKey(), e.getValue() - prevWeek.getOrDefault(e.getKey(), 0L)))
+                .filter(e -> e.getValue() > 0)
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElseGet(() -> thisWeek.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .map(Map.Entry::getKey)
+                        .orElse(""));
+    }
+
 }
