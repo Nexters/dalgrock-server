@@ -146,9 +146,10 @@ public class RecordService {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
 
-        if (recordRepository.existsByUserIdAndCreatedAtBetween(userId, startOfDay, startOfNextDay)) {
-            throw new RecordAlreadyExistsTodayException();
-        }
+        // TODO: 기록생성 제한 임시 해제
+//        if (recordRepository.existsByUserIdAndCreatedAtBetween(userId, startOfDay, startOfNextDay)) {
+//            throw new RecordAlreadyExistsTodayException();
+//        }
 
         int year = getYearOfWeek(today);
         int month = getMonthOfWeek(today);
