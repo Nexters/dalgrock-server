@@ -109,10 +109,6 @@ public class WeeklyReportGenerationService {
                         .status(ReportStatus.CREATED)
                         .build()));
 
-        if (report.getStatus() == ReportStatus.COMPLETED) {
-            log.info("이미 완료된 리포트입니다. userId={}, weeklyId={}", userId, weekly.getId());
-            return Optional.of(report);
-        }
         if (report.getStatus() == ReportStatus.PROCESSING) {
             log.warn("이미 처리 중인 리포트입니다. userId={}, weeklyId={}", userId, weekly.getId());
             return Optional.empty();
