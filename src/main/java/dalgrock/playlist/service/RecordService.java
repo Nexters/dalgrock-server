@@ -63,7 +63,29 @@ public class RecordService {
                 .map(GetRecordMusicResponse::from)
                 .toList();
 
-        return GetRecordDetailResponse.of(record, recordMusicResponses);
+        LocalDate recordDate = resolveRecordDate(record);
+        return GetRecordDetailResponse.of(recordDate, record, recordMusicResponses);
+    }
+
+    private static LocalDate resolveRecordDate(Record record) {
+        if (record.getRecordDate() != null) {
+            return record.getRecordDate();
+        }
+        return record.getCreatedAt().atZone(APP_ZONE).toLocalDate();
+    }
+
+    /**
+     * 년/월/일이 셋 다 있으면 해당 날짜, 하나라도 없거나 유효하지 않으면 today 사용.
+     */
+    private static LocalDate resolveTargetDate(Integer year, Integer month, Integer day, LocalDate today) {
+        if (year == null || month == null || day == null) {
+            return today;
+        }
+        try {
+            return LocalDate.of(year, month, day);
+        } catch (Exception e) {
+            return today;
+        }
     }
 
     private static final ZoneId APP_ZONE = ZoneId.of("Asia/Seoul");
@@ -92,8 +114,8 @@ public class RecordService {
 
         Map<LocalDate, Record> recordByDate = new HashMap<>();
         for (Record r : records) {
-            if (isDateInRange(r.getCreatedAt(), weekMonday, weekSunday)) {
-                LocalDate d = r.getCreatedAt().atZone(APP_ZONE).toLocalDate();
+            LocalDate d = resolveRecordDate(r);
+            if (!d.isBefore(weekMonday) && !d.isAfter(weekSunday)) {
                 recordByDate.put(d, r);
             }
         }
@@ -113,14 +135,6 @@ public class RecordService {
 
     private static GetRecordResponse.RecordItem emptyRecordItem(boolean isToday) {
         return new GetRecordResponse.RecordItem(null, null, List.of(), List.of(), isToday);
-    }
-
-    /**
-     * createdAt의 날짜가 [weekMonday, weekSunday] 안에 있는지 검사. 저장이 KST면 atZone(APP_ZONE), UTC면 UTC→Seoul 변환 필요.
-     */
-    private static boolean isDateInRange(LocalDateTime createdAt, LocalDate weekMonday, LocalDate weekSunday) {
-        LocalDate d = createdAt.atZone(APP_ZONE).toLocalDate();
-        return !d.isBefore(weekMonday) && !d.isAfter(weekSunday);
     }
 
     private GetRecordResponse.RecordItem toRecordItem(Record record, boolean isToday) {
@@ -145,16 +159,21 @@ public class RecordService {
     @Transactional
     public CreateRecordResponse createRecord(Long userId, CreateRecordCommand command) {
         LocalDate today = ZonedDateTime.now(APP_ZONE).toLocalDate();
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
+        LocalDate targetDate = resolveTargetDate(command.year(), command.month(), command.day(), today);
 
-        if (recordRepository.existsByUserIdAndCreatedAtBetween(userId, startOfDay, startOfNextDay)) {
+        boolean existsByRecordDate = recordRepository.existsByUserIdAndRecordDate(userId, targetDate);
+        boolean existsByCreatedAt = recordRepository.existsByUserIdAndRecordDateIsNullAndCreatedAtBetween(
+                userId,
+                targetDate.atStartOfDay(),
+                targetDate.plusDays(1).atStartOfDay()
+        );
+        if (existsByRecordDate || existsByCreatedAt) {
             throw new RecordAlreadyExistsTodayException();
         }
 
-        int year = getYearOfWeek(today);
-        int month = getMonthOfWeek(today);
-        int week = getWeekOfMonth(today);
+        int year = getYearOfWeek(targetDate);
+        int month = getMonthOfWeek(targetDate);
+        int week = getWeekOfMonth(targetDate);
 
         Weekly weekly = findOrCreateWeekly(year, month, week);
 
@@ -167,6 +186,7 @@ public class RecordService {
 
         Record record = Record.builder()
                 .userId(userId)
+                .recordDate(targetDate)
                 .thumbnail(thumbnail != null ? thumbnail : "")
                 .location(command.location())
                 .content(command.content())
@@ -275,7 +295,8 @@ public class RecordService {
         List<GetRecordMusicResponse> recordMusicResponses = recordMusics.stream()
                 .map(GetRecordMusicResponse::from)
                 .toList();
-        return GetRecordDetailResponse.of(savedRecord, recordMusicResponses);
+        LocalDate recordDate = resolveRecordDate(savedRecord);
+        return GetRecordDetailResponse.of(recordDate, savedRecord, recordMusicResponses);
     }
 
     private void updateMusics(Record record, List<CreateRecordMusicCommand> musics) {

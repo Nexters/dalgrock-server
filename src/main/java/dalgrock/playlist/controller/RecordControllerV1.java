@@ -62,12 +62,15 @@ public class RecordControllerV1 {
         return recordService.getRecordDetail(principal.userId(), recordId);
     }
 
-    @Operation(summary = "내 기록 추가", description = "오늘의 내 기록을 추가합니다")
+    @Operation(
+            summary = "내 기록 추가",
+            description = "기록을 추가합니다. 날짜는 year, month, day를 각각 숫자로 보냅니다(예: 2026, 2, 21). 셋 중 하나라도 없으면 오늘 날짜로 등록됩니다."
+    )
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CreateRecordResponse createRecord(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody CreateRecordRequest request
+            @RequestBody @Valid CreateRecordRequest request
     ) {
         CreateRecordCommand command = toCommand(request);
         return recordService.createRecord(principal.userId(), command);
@@ -87,7 +90,10 @@ public class RecordControllerV1 {
                 request.emotions(),
                 request.content(),
                 request.situations(),
-                request.location()
+                request.location(),
+                request.year(),
+                request.month(),
+                request.day()
         );
     }
 
