@@ -2,7 +2,6 @@ package dalgrock.playlist.infrastructure.repository.jpa;
 
 import dalgrock.playlist.infrastructure.repository.RecordRepository;
 import dalgrock.playlist.model.Record;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -28,16 +27,6 @@ public class RecordRepositoryAdapter implements RecordRepository {
     @Override
     public boolean existsByUserIdAndCreatedAtBetween(Long userId, LocalDateTime start, LocalDateTime end) {
         return jpaRecordRepository.existsByUserIdAndCreatedAtBetweenAndDeletedAtIsNull(userId, start, end);
-    }
-
-    @Override
-    public boolean existsByUserIdAndRecordDate(Long userId, LocalDate recordDate) {
-        return jpaRecordRepository.existsByUserIdAndRecordDateAndDeletedAtIsNull(userId, recordDate);
-    }
-
-    @Override
-    public boolean existsByUserIdAndRecordDateIsNullAndCreatedAtBetween(Long userId, LocalDateTime start, LocalDateTime end) {
-        return jpaRecordRepository.existsByUserIdAndRecordDateIsNullAndCreatedAtBetweenAndDeletedAtIsNull(userId, start, end);
     }
 
     @Override

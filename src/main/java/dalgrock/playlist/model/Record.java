@@ -17,7 +17,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,9 +41,6 @@ public class Record extends BaseTimeEntity {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
-
-    @Column(name = "record_date")
-    private LocalDate recordDate;
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
