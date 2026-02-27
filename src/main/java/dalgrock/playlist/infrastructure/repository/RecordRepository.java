@@ -1,7 +1,6 @@
 package dalgrock.playlist.infrastructure.repository;
 
 import dalgrock.playlist.model.Record;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -13,10 +12,6 @@ public interface RecordRepository {
     Record save(Record record);
 
     boolean existsByUserIdAndCreatedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
-
-    boolean existsByUserIdAndRecordDate(Long userId, LocalDate recordDate);
-
-    boolean existsByUserIdAndRecordDateIsNullAndCreatedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
 
     List<Record> findByUserIdAndWeeklyIdIn(Long userId, List<Long> weeklyIds);
 }

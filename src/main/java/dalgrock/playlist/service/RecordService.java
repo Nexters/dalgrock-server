@@ -68,9 +68,6 @@ public class RecordService {
     }
 
     private static LocalDate resolveRecordDate(Record record) {
-        if (record.getRecordDate() != null) {
-            return record.getRecordDate();
-        }
         return record.getCreatedAt().atZone(APP_ZONE).toLocalDate();
     }
 
@@ -161,13 +158,11 @@ public class RecordService {
         LocalDate today = ZonedDateTime.now(APP_ZONE).toLocalDate();
         LocalDate targetDate = resolveTargetDate(command.year(), command.month(), command.day(), today);
 
-        boolean existsByRecordDate = recordRepository.existsByUserIdAndRecordDate(userId, targetDate);
-        boolean existsByCreatedAt = recordRepository.existsByUserIdAndRecordDateIsNullAndCreatedAtBetween(
+        if (recordRepository.existsByUserIdAndCreatedAtBetween(
                 userId,
                 targetDate.atStartOfDay(),
                 targetDate.plusDays(1).atStartOfDay()
-        );
-        if (existsByRecordDate || existsByCreatedAt) {
+        )) {
             throw new RecordAlreadyExistsTodayException();
         }
 
@@ -186,7 +181,6 @@ public class RecordService {
 
         Record record = Record.builder()
                 .userId(userId)
-                .recordDate(targetDate)
                 .thumbnail(thumbnail != null ? thumbnail : "")
                 .location(command.location())
                 .content(command.content())
@@ -194,6 +188,8 @@ public class RecordService {
                 .situations(situations)
                 .weekly(weekly)
                 .build();
+
+        record.setCreatedAt(targetDate.atStartOfDay());
 
         Record savedRecord = recordRepository.save(record);
 
