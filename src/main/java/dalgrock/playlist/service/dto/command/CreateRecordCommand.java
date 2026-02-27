@@ -7,6 +7,9 @@ public record CreateRecordCommand(
         List<String> emotions,
         String content,
         List<String> situations,
-        String location
+        String location,
+        Integer year,
+        Integer month,
+        Integer day
 ) {
 }
